@@ -45,12 +45,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -76,7 +72,7 @@ private const val MAIN_TAB_PRESSED_SCALE = 0.88f
 private const val TAB_TRANSITION_DURATION_MILLIS = 260
 private const val TAB_SLIDE_DISTANCE_DIVISOR = 5
 
-private enum class MainTab(
+internal enum class MainTab(
     @param:StringRes val label: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
@@ -93,7 +89,9 @@ private enum class MainTab(
 
 @Composable
 @Suppress("LongMethod")
-fun MainScreen(
+internal fun MainScreen(
+    selectedTab: MainTab,
+    onTabSelected: (MainTab) -> Unit,
     settingsState: SettingsUiState,
     onSettingsLoad: () -> Unit,
     onLogout: () -> Unit,
@@ -102,7 +100,6 @@ fun MainScreen(
     onOpenBudgetBook: (YearMonth) -> Unit,
     onExit: () -> Unit,
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     val context = LocalContext.current
     val exitConfirmation = remember { ExitConfirmation() }
     BackHandler {
@@ -115,7 +112,7 @@ fun MainScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            MainNavigationBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
+            MainNavigationBar(selectedTab = selectedTab, onTabSelected = onTabSelected)
         },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {

@@ -32,6 +32,7 @@ import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.document.MarkdownViewerScreen
 import com.yu_morph.smartbudget.ui.main.BudgetBookDetailScreen
 import com.yu_morph.smartbudget.ui.main.MainScreen
+import com.yu_morph.smartbudget.ui.main.MainTab
 import com.yu_morph.smartbudget.ui.main.SettingsCoordinator
 import com.yu_morph.smartbudget.ui.main.SettingsDetailDestination
 import com.yu_morph.smartbudget.ui.main.SettingsDetailScreen
@@ -53,6 +54,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
     var openDocument by rememberSaveable { mutableStateOf<MarkdownDocument?>(null) }
     var openSettings by rememberSaveable { mutableStateOf<SettingsDetailDestination?>(null) }
     var openBudgetBookMonth by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedMainTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val api = remember(context) { SmartBudgetApiFactory.create(context.applicationContext) }
@@ -83,6 +85,8 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
                     destination = destination,
                     coordinator = coordinator,
                     settingsCoordinator = settingsCoordinator,
+                    selectedMainTab = selectedMainTab,
+                    onMainTabSelected = { selectedMainTab = it },
                     onDestinationChange = { destination = it },
                     onOpenDocument = { openDocument = it },
                     onOpenSettings = { openSettings = it },
@@ -106,6 +110,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
                             settingsCoordinator.updatePassword(current, new) {
                                 openSettings = null
                                 coordinator.signOut()
+                                selectedMainTab = MainTab.HOME
                                 destination = AppDestination.LOGIN
                             }
                         },
@@ -119,6 +124,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
                             settingsCoordinator.deleteAccount {
                                 openSettings = null
                                 coordinator.signOut()
+                                selectedMainTab = MainTab.HOME
                                 destination = AppDestination.LOGIN
                             }
                         },
@@ -160,6 +166,8 @@ private fun AuthenticationContent(
     destination: AppDestination,
     coordinator: AuthCoordinator,
     settingsCoordinator: SettingsCoordinator,
+    selectedMainTab: MainTab,
+    onMainTabSelected: (MainTab) -> Unit,
     onDestinationChange: (AppDestination) -> Unit,
     onOpenDocument: (MarkdownDocument) -> Unit,
     onOpenSettings: (SettingsDetailDestination) -> Unit,
@@ -208,10 +216,13 @@ private fun AuthenticationContent(
             )
 
             AppDestination.MAIN -> MainScreen(
+                selectedTab = selectedMainTab,
+                onTabSelected = onMainTabSelected,
                 settingsState = settingsCoordinator.state,
                 onSettingsLoad = settingsCoordinator::refresh,
                 onLogout = {
                     coordinator.signOut()
+                    onMainTabSelected(MainTab.HOME)
                     onDestinationChange(AppDestination.LOGIN)
                 },
                 onOpenDocument = onOpenDocument,
