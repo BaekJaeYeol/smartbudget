@@ -183,7 +183,7 @@ class SettingsCoordinator(
         )
     }
 
-    fun syncBankTransactions() {
+    fun syncBankTransactions(onSuccess: () -> Unit) {
         if (state.isBankSyncing) return
         scope.launch {
             state = state.copy(isBankSyncing = true)
@@ -226,6 +226,7 @@ class SettingsCoordinator(
                     applicationContext.getString(R.string.settings_bank_sync_success, result.data.count),
                     Toast.LENGTH_SHORT,
                 ).show()
+                onSuccess()
             } catch (_: Exception) {
                 showToast(R.string.unknown_error)
             } finally {
