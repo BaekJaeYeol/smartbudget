@@ -103,15 +103,14 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                         destination = settings,
                         state = settingsCoordinator.state,
                         onBack = { openSettings = null },
-                        onUpdateDisplayName = { name ->
-                            settingsCoordinator.updateDisplayName(name) { openSettings = null }
-                        },
-                        onUpdatePassword = { current, new ->
-                            settingsCoordinator.updatePassword(current, new) {
+                        onSaveProfile = { name, current, new ->
+                            settingsCoordinator.updateProfile(name, current, new) { passwordChanged ->
                                 openSettings = null
-                                coordinator.signOut()
-                                selectedMainTab = MainTab.HOME
-                                destination = AppDestination.LOGIN
+                                afterProfileSaved(passwordChanged) {
+                                    coordinator.signOut()
+                                    selectedMainTab = MainTab.HOME
+                                    destination = AppDestination.LOGIN
+                                }
                             }
                         },
                         onLoadBudget = settingsCoordinator::loadMonthlyBudget,
@@ -146,6 +145,10 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
         if (coordinator.isLoading) AuthLoadingDialog()
         if (settingsCoordinator.state.isLoading) AuthLoadingDialog()
     }
+}
+
+private inline fun afterProfileSaved(passwordChanged: Boolean, onPasswordChanged: () -> Unit) {
+    if (passwordChanged) onPasswordChanged()
 }
 
 private fun <S> androidx.compose.animation.AnimatedContentTransitionScope<S>.detailTransition(opening: Boolean) = run {

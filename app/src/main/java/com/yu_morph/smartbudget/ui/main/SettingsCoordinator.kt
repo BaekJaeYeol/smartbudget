@@ -75,28 +75,32 @@ class SettingsCoordinator(
         }
     }
 
-    fun updateDisplayName(displayName: String, onSuccess: () -> Unit) {
-        execute(
-            request = { api.auth.updateAccount(UpdateAccountRequest(displayName = displayName)) },
-            onSuccess = {
-                state = state.copy(displayName = displayName)
-                showToast(R.string.settings_profile_updated)
-                onSuccess()
-            },
-        )
-    }
-
-    fun updatePassword(currentPassword: String, newPassword: String, onSuccess: () -> Unit) {
+    fun updateProfile(
+        displayName: String,
+        currentPassword: String,
+        newPassword: String,
+        onSuccess: (Boolean) -> Unit,
+    ) {
+        val passwordChanged = newPassword.isNotBlank()
         execute(
             request = {
                 api.auth.updateAccount(
-                    UpdateAccountRequest(currentPassword = currentPassword, password = newPassword),
+                    UpdateAccountRequest(
+                        displayName = displayName,
+                        currentPassword = currentPassword.takeIf { passwordChanged },
+                        password = newPassword.takeIf { passwordChanged },
+                    ),
                 )
             },
             onSuccess = {
-                userIdentityStore.clear()
-                showToast(R.string.settings_password_updated)
-                onSuccess()
+                state = state.copy(displayName = displayName)
+                if (passwordChanged) {
+                    userIdentityStore.clear()
+                    showToast(R.string.settings_password_updated)
+                } else {
+                    showToast(R.string.settings_profile_updated)
+                }
+                onSuccess(passwordChanged)
             },
         )
     }

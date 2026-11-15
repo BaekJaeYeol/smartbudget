@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.SettingsBrightness
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -88,8 +89,7 @@ internal fun SettingsDetailScreen(
     destination: SettingsDetailDestination,
     state: SettingsUiState,
     onBack: () -> Unit,
-    onUpdateDisplayName: (String) -> Unit,
-    onUpdatePassword: (String, String) -> Unit,
+    onSaveProfile: (String, String, String) -> Unit,
     onLoadBudget: () -> Unit,
     onSaveBudget: (Int) -> Unit,
     onSyncBankTransactions: () -> Unit,
@@ -99,6 +99,7 @@ internal fun SettingsDetailScreen(
     onVerifyWithdrawal: (String, () -> Unit) -> Unit,
     onDeleteAccount: () -> Unit,
 ) {
+    var saveAction by remember(destination) { mutableStateOf<SettingsSaveAction?>(null) }
     BackHandler(onBack = onBack)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -117,6 +118,13 @@ internal fun SettingsDetailScreen(
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.navigate_back))
                     }
                 },
+                actions = {
+                    saveAction?.let { action ->
+                        IconButton(onClick = action.onSave, enabled = action.enabled && !state.isLoading) {
+                            Icon(Icons.Rounded.Save, stringResource(R.string.settings_save_action))
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -125,8 +133,8 @@ internal fun SettingsDetailScreen(
             SettingsDetailDestination.PROFILE -> ProfileSettings(
                 state = state,
                 modifier = Modifier.padding(innerPadding),
-                onUpdateDisplayName = onUpdateDisplayName,
-                onUpdatePassword = onUpdatePassword,
+                onSave = onSaveProfile,
+                onSaveActionChanged = { saveAction = it },
             )
 
             SettingsDetailDestination.MONTHLY_BUDGET -> BudgetSettings(
@@ -134,6 +142,7 @@ internal fun SettingsDetailScreen(
                 modifier = Modifier.padding(innerPadding),
                 onLoad = onLoadBudget,
                 onSave = onSaveBudget,
+                onSaveActionChanged = { saveAction = it },
             )
 
             SettingsDetailDestination.BANK_CONNECTION -> BankConnectionScreen(
@@ -173,13 +182,28 @@ internal fun SettingsDetailScreen(
 private fun ProfileSettings(
     state: SettingsUiState,
     modifier: Modifier,
-    onUpdateDisplayName: (String) -> Unit,
-    onUpdatePassword: (String, String) -> Unit,
+    onSave: (String, String, String) -> Unit,
+    onSaveActionChanged: (SettingsSaveAction) -> Unit,
 ) {
     var displayName by rememberSaveable(state.displayName) { mutableStateOf(state.displayName) }
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
+    val passwordUnchanged = currentPassword.isBlank() && newPassword.isBlank() && passwordConfirmation.isBlank()
+    val passwordValid =
+        currentPassword.isNotBlank() &&
+            SignUpValidation.isValidPassword(newPassword) &&
+            newPassword == passwordConfirmation
+    val saveAction =
+        remember(displayName, currentPassword, newPassword, passwordConfirmation, onSave) {
+            SettingsSaveAction(
+                enabled =
+                    SignUpValidation.isValidDisplayName(displayName) &&
+                        (passwordUnchanged || passwordValid),
+                onSave = { onSave(displayName.trim(), currentPassword, newPassword) },
+            )
+        }
+    LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
     SettingsColumn(modifier) {
         SettingsSection(title = stringResource(R.string.settings_name_tab)) {
             AuthTextField(
@@ -192,11 +216,6 @@ private fun ProfileSettings(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
             )
-            PrimaryAuthButton(
-                text = stringResource(R.string.settings_save_action),
-                onClick = { onUpdateDisplayName(displayName.trim()) },
-                enabled = SignUpValidation.isValidDisplayName(displayName),
-            )
         }
         SettingsSection(title = stringResource(R.string.settings_password_tab)) {
             PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
@@ -207,21 +226,28 @@ private fun ProfileSettings(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
             )
-            PrimaryAuthButton(
-                text = stringResource(R.string.settings_change_password),
-                onClick = { onUpdatePassword(currentPassword, newPassword) },
-                enabled =
-                    currentPassword.isNotBlank() &&
-                        SignUpValidation.isValidPassword(newPassword) &&
-                        newPassword == passwordConfirmation,
-            )
         }
     }
 }
 
 @Composable
-private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: () -> Unit, onSave: (Int) -> Unit) {
+private fun BudgetSettings(
+    state: SettingsUiState,
+    modifier: Modifier,
+    onLoad: () -> Unit,
+    onSave: (Int) -> Unit,
+    onSaveActionChanged: (SettingsSaveAction) -> Unit,
+) {
     var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
+    val amount = amountText.toIntOrNull()
+    val saveAction =
+        remember(amount, onSave) {
+            SettingsSaveAction(
+                enabled = amount != null && amount in 0..10_000_000,
+                onSave = { amount?.let(onSave) },
+            )
+        }
+    LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
     LaunchedEffect(Unit) { onLoad() }
     SettingsColumn(modifier) {
         SettingsSection(title = stringResource(R.string.settings_budget_setup_tab)) {
@@ -241,11 +267,6 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
                     )
                 }
             }
-            PrimaryAuthButton(
-                text = stringResource(R.string.settings_save_budget),
-                onClick = { amountText.toIntOrNull()?.let(onSave) },
-                enabled = amountText.toIntOrNull() in 0..10_000_000,
-            )
         }
         SettingsSection(title = stringResource(R.string.settings_budget_history_tab)) {
             if (state.budgetHistory.isEmpty()) {
@@ -267,6 +288,8 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
         }
     }
 }
+
+private data class SettingsSaveAction(val enabled: Boolean, val onSave: () -> Unit)
 
 @Composable
 private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSelected: (String) -> Unit) {
