@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,10 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -174,112 +171,92 @@ private fun ProfileSettings(
     onUpdateDisplayName: (String) -> Unit,
     onUpdatePassword: (String, String) -> Unit,
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
     var displayName by rememberSaveable(state.displayName) { mutableStateOf(state.displayName) }
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
-    SettingsColumn(modifier, contentPadding = PaddingValues(0.dp)) {
-        SettingsTabs(
-            selectedTab = selectedTab,
-            titles = listOf(R.string.settings_name_tab, R.string.settings_password_tab),
-            onSelected = { selectedTab = it },
-        )
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            if (selectedTab == 0) {
-                AuthTextField(
-                    value = displayName,
-                    onValueChange = { displayName = it },
-                    placeholder = stringResource(R.string.display_name_hint),
-                )
-                Text(
-                    text = stringResource(R.string.display_name_condition_label),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                )
-                PrimaryAuthButton(
-                    text = stringResource(R.string.settings_save_action),
-                    onClick = { onUpdateDisplayName(displayName.trim()) },
-                    enabled = SignUpValidation.isValidDisplayName(displayName),
-                )
-            } else {
-                PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
-                PasswordField(newPassword, { newPassword = it }, R.string.settings_new_password)
-                PasswordField(passwordConfirmation, { passwordConfirmation = it }, R.string.password_confirm_hint)
-                Text(
-                    text = stringResource(R.string.password_condition_label),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                )
-                PrimaryAuthButton(
-                    text = stringResource(R.string.settings_change_password),
-                    onClick = { onUpdatePassword(currentPassword, newPassword) },
-                    enabled =
-                        currentPassword.isNotBlank() &&
-                            SignUpValidation.isValidPassword(newPassword) &&
-                            newPassword == passwordConfirmation,
-                )
-            }
+    SettingsColumn(modifier) {
+        SettingsSection(title = stringResource(R.string.settings_name_tab)) {
+            AuthTextField(
+                value = displayName,
+                onValueChange = { displayName = it },
+                placeholder = stringResource(R.string.display_name_hint),
+            )
+            Text(
+                text = stringResource(R.string.display_name_condition_label),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_save_action),
+                onClick = { onUpdateDisplayName(displayName.trim()) },
+                enabled = SignUpValidation.isValidDisplayName(displayName),
+            )
+        }
+        SettingsSection(title = stringResource(R.string.settings_password_tab)) {
+            PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
+            PasswordField(newPassword, { newPassword = it }, R.string.settings_new_password)
+            PasswordField(passwordConfirmation, { passwordConfirmation = it }, R.string.password_confirm_hint)
+            Text(
+                text = stringResource(R.string.password_condition_label),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_change_password),
+                onClick = { onUpdatePassword(currentPassword, newPassword) },
+                enabled =
+                    currentPassword.isNotBlank() &&
+                        SignUpValidation.isValidPassword(newPassword) &&
+                        newPassword == passwordConfirmation,
+            )
         }
     }
 }
 
 @Composable
 private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: () -> Unit, onSave: (Int) -> Unit) {
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
     var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
     LaunchedEffect(Unit) { onLoad() }
-    SettingsColumn(modifier, contentPadding = PaddingValues(0.dp)) {
-        SettingsTabs(
-            selectedTab = selectedTab,
-            titles = listOf(R.string.settings_budget_setup_tab, R.string.settings_budget_history_tab),
-            onSelected = { selectedTab = it },
-        )
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            if (selectedTab == 0) {
-                AuthTextField(
-                    value = amountText,
-                    onValueChange = { value -> amountText = value.filter(Char::isDigit).take(8) },
-                    placeholder = stringResource(R.string.settings_budget_amount),
-                    suffix = { Text(stringResource(R.string.settings_won)) },
-                    keyboardType = KeyboardType.Number,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(500_000, 1_000_000, 2_000_000).forEach { amount ->
-                        BudgetPresetButton(
-                            text = stringResource(R.string.settings_budget_quick_amount, amount / 10_000),
-                            onClick = { amountText = amount.toString() },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+    SettingsColumn(modifier) {
+        SettingsSection(title = stringResource(R.string.settings_budget_setup_tab)) {
+            AuthTextField(
+                value = amountText,
+                onValueChange = { value -> amountText = value.filter(Char::isDigit).take(8) },
+                placeholder = stringResource(R.string.settings_budget_amount),
+                suffix = { Text(stringResource(R.string.settings_won)) },
+                keyboardType = KeyboardType.Number,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(500_000, 1_000_000, 2_000_000).forEach { amount ->
+                    BudgetPresetButton(
+                        text = stringResource(R.string.settings_budget_quick_amount, amount / 10_000),
+                        onClick = { amountText = amount.toString() },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
-                PrimaryAuthButton(
-                    text = stringResource(R.string.settings_save_budget),
-                    onClick = { amountText.toIntOrNull()?.let(onSave) },
-                    enabled = amountText.toIntOrNull() in 0..10_000_000,
+            }
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_save_budget),
+                onClick = { amountText.toIntOrNull()?.let(onSave) },
+                enabled = amountText.toIntOrNull() in 0..10_000_000,
+            )
+        }
+        SettingsSection(title = stringResource(R.string.settings_budget_history_tab)) {
+            if (state.budgetHistory.isEmpty()) {
+                Text(
+                    stringResource(R.string.settings_budget_history_empty),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                if (state.budgetHistory.isEmpty()) {
-                    Text(
-                        stringResource(R.string.settings_budget_history_empty),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                state.budgetHistory.forEach { item ->
+                    SettingValueRow(
+                        label = item.month.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
+                        value = stringResource(
+                            R.string.settings_budget_history_amount,
+                            NumberFormat.getNumberInstance(Locale.KOREA).format(item.amount),
+                        ),
                     )
-                } else {
-                    state.budgetHistory.forEach { item ->
-                        SettingValueRow(
-                            label = item.month.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
-                            value = stringResource(
-                                R.string.settings_budget_history_amount,
-                                NumberFormat.getNumberInstance(Locale.KOREA).format(item.amount),
-                            ),
-                        )
-                    }
                 }
             }
         }
@@ -400,40 +377,16 @@ private fun WithdrawalSettings(
 }
 
 @Composable
-private fun SettingsColumn(
-    modifier: Modifier,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
-    content: @Composable ColumnScope.() -> Unit,
-) {
+private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(contentPadding),
+                .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
-}
-
-@Composable
-private fun SettingsTabs(selectedTab: Int, titles: List<Int>, onSelected: (Int) -> Unit) {
-    PrimaryScrollableTabRow(
-        selectedTabIndex = selectedTab,
-        edgePadding = 0.dp,
-        containerColor = Color.Transparent,
-        contentColor = SmartBudgetGreen,
-    ) {
-        titles.forEachIndexed { index, title ->
-            Tab(
-                selected = selectedTab == index,
-                onClick = { onSelected(index) },
-                text = { Text(stringResource(title), fontWeight = FontWeight.SemiBold) },
-                selectedContentColor = SmartBudgetGreen,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
 }
 
 @Composable
