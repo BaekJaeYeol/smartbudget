@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.SettingsBrightness
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -55,13 +58,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.blongho.country_data.World
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.ui.auth.AuthTextField
 import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.auth.SignUpValidation
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
-import com.blongho.country_data.World
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -328,6 +331,14 @@ private fun DisplaySettings(selectedMode: DisplayMode, modifier: Modifier, onSel
                 title = stringResource(mode.labelResource()),
                 selected = selectedMode == mode,
                 onClick = { onSelected(mode) },
+                leadingContent = {
+                    Icon(
+                        imageVector = mode.icon(),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp),
+                    )
+                },
             )
         }
     }
@@ -526,4 +537,10 @@ private fun DisplayMode.labelResource(): Int = when (this) {
     DisplayMode.LIGHT -> R.string.settings_theme_light
     DisplayMode.DARK -> R.string.settings_theme_dark
     DisplayMode.SYSTEM -> R.string.settings_theme_system
+}
+
+private fun DisplayMode.icon() = when (this) {
+    DisplayMode.LIGHT -> Icons.Outlined.LightMode
+    DisplayMode.DARK -> Icons.Outlined.DarkMode
+    DisplayMode.SYSTEM -> Icons.Outlined.SettingsBrightness
 }

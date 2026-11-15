@@ -11,11 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.blongho.country_data.World
 import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.data.local.PreferenceStoreFactory
 import com.yu_morph.smartbudget.ui.SmartBudgetApp
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetTheme
-import com.blongho.country_data.World
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
