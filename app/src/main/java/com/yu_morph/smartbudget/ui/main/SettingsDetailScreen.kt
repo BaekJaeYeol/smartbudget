@@ -14,7 +14,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +70,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -248,7 +249,13 @@ private fun AccountSettings(
         SettingsSection(title = stringResource(R.string.settings_monthly_budget_section)) {
             val historyByMonth = state.budgetHistory.associateBy(BudgetHistoryItem::month)
             val historyMonths = (2 downTo 0).map { YearMonth.now().minusMonths(it.toLong()) }
-            val historyBackground = if (isSystemInDarkTheme()) Color(0xFF292929) else Color(0xFFF4F4F4)
+            val screenBackground = MaterialTheme.colorScheme.background
+            val historyBackground =
+                if (screenBackground.luminance() < 0.5f) {
+                    lerp(screenBackground, Color.Black, 0.12f)
+                } else {
+                    Color(0xFFF4F4F4)
+                }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 historyMonths.forEach { month ->
                     Surface(
