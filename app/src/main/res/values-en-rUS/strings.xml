@@ -64,6 +64,9 @@
     <string name="settings_monthly_budget">Monthly budget</string>
     <string name="settings_display_name_section">Display name</string>
     <string name="settings_password_section">Change password</string>
+    <string name="settings_name_tab">Name</string>
+    <string name="settings_password_tab">Password</string>
+    <string name="settings_save_action">Save</string>
     <string name="settings_save_display_name">Save display name</string>
     <string name="settings_current_password">Current password</string>
     <string name="settings_new_password">New password</string>
@@ -72,6 +75,8 @@
     <string name="settings_password_updated">Your password was changed. Please sign in again.</string>
     <string name="settings_password_incorrect">The password is incorrect.</string>
     <string name="settings_current_month_budget">This month’s budget</string>
+    <string name="settings_budget_setup_tab">Set budget</string>
+    <string name="settings_budget_history_tab">Change history</string>
     <string name="settings_budget_amount">Budget amount</string>
     <string name="settings_won">KRW</string>
     <string name="settings_budget_quick_amount">₩%1$d0K</string>
