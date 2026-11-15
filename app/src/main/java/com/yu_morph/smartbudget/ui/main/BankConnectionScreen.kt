@@ -166,7 +166,7 @@ private fun BankSelectionHeader(selectedAll: Boolean, onToggleAll: () -> Unit) {
 private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     Card(
-        modifier = Modifier.fillMaxWidth().height(80.dp).clip(shape).clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().height(84.dp).clip(shape).clickable(onClick = onClick),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border =
