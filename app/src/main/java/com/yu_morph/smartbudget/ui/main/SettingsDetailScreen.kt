@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,8 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -177,18 +178,26 @@ private fun ProfileSettings(
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
-    SettingsColumn(modifier) {
+    SettingsColumn(modifier, contentPadding = PaddingValues(0.dp)) {
         SettingsTabs(
             selectedTab = selectedTab,
             titles = listOf(R.string.settings_name_tab, R.string.settings_password_tab),
             onSelected = { selectedTab = it },
         )
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             if (selectedTab == 0) {
                 AuthTextField(
                     value = displayName,
                     onValueChange = { displayName = it },
                     placeholder = stringResource(R.string.display_name_hint),
+                )
+                Text(
+                    text = stringResource(R.string.display_name_condition_label),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
                 )
                 PrimaryAuthButton(
                     text = stringResource(R.string.settings_save_action),
@@ -222,13 +231,16 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
     LaunchedEffect(Unit) { onLoad() }
-    SettingsColumn(modifier) {
+    SettingsColumn(modifier, contentPadding = PaddingValues(0.dp)) {
         SettingsTabs(
             selectedTab = selectedTab,
             titles = listOf(R.string.settings_budget_setup_tab, R.string.settings_budget_history_tab),
             onSelected = { selectedTab = it },
         )
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             if (selectedTab == 0) {
                 AuthTextField(
                     value = amountText,
@@ -387,13 +399,17 @@ private fun WithdrawalSettings(
 }
 
 @Composable
-private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun SettingsColumn(
+    modifier: Modifier,
+    contentPadding: PaddingValues = PaddingValues(8.dp),
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
@@ -401,8 +417,9 @@ private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.
 
 @Composable
 private fun SettingsTabs(selectedTab: Int, titles: List<Int>, onSelected: (Int) -> Unit) {
-    PrimaryTabRow(
+    PrimaryScrollableTabRow(
         selectedTabIndex = selectedTab,
+        edgePadding = 0.dp,
         containerColor = Color.Transparent,
         contentColor = SmartBudgetGreen,
     ) {

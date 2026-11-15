@@ -81,8 +81,8 @@
     <string name="settings_monthly_budget">Monthly budget</string>
     <string name="settings_display_name_section">Display name</string>
     <string name="settings_password_section">Change password</string>
-    <string name="settings_name_tab">Name</string>
-    <string name="settings_password_tab">Password</string>
+    <string name="settings_name_tab">Change name</string>
+    <string name="settings_password_tab">Change password</string>
     <string name="settings_save_action">Save</string>
     <string name="settings_save_display_name">Save display name</string>
     <string name="settings_current_password">Current password</string>
