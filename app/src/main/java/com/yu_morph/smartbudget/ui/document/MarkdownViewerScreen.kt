@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -42,6 +43,9 @@ import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.ui.main.mainScreenBackgroundBrush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private val LightTableHeaderBackground = Color(0xFFE5E5E5)
+private val DarkTableHeaderBackground = Color(0xFF363636)
 
 private sealed interface MarkdownBlock {
     data class Heading(val level: Int, val text: String) : MarkdownBlock
@@ -162,10 +166,16 @@ private fun MarkdownTable(table: MarkdownBlock.Table) {
 @Composable
 private fun MarkdownTableRow(cells: List<String>, isHeader: Boolean) {
     val widths = listOf(240.dp, 90.dp, 160.dp, 220.dp)
+    val headerBackground =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+            DarkTableHeaderBackground
+        } else {
+            LightTableHeaderBackground
+        }
     Row(
         modifier =
             Modifier.background(
-                if (isHeader) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
+                if (isHeader) headerBackground else Color.Transparent,
             ),
     ) {
         cells.forEachIndexed { index, cell ->
