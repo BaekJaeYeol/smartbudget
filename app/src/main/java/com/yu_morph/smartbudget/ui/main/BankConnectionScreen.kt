@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,6 +58,7 @@ private data class BankOption(
     val logoAssetName: String,
     val logoWidth: Int,
     val logoHeight: Int,
+    val logoScale: Float = 1f,
 )
 
 private val BankOptions =
@@ -75,7 +77,7 @@ private val BankOptions =
         BankOption("gwangju", R.string.bank_gwangju, "광주은행 심볼.svg", 28, 28),
         BankOption("jeonbuk", R.string.bank_jeonbuk, "전북은행 심볼.svg", 28, 28),
         BankOption("jeju", R.string.bank_jeju, "제주은행 심볼.svg", 28, 28),
-        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12),
+        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12, logoScale = 1.3f),
         BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
         BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 26),
         BankOption("suhyup", R.string.bank_suhyup, "수협은행 심볼.svg", 30, 22),
@@ -157,7 +159,10 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
                     contentDescription = stringResource(R.string.settings_bank_logo, stringResource(bank.nameResource)),
                     renderWidth = bank.logoWidth,
                     renderHeight = bank.logoHeight,
-                    modifier = Modifier.size(bank.logoWidth.dp, bank.logoHeight.dp),
+                    modifier =
+                        Modifier
+                            .size(bank.logoWidth.dp, bank.logoHeight.dp)
+                            .graphicsLayer(scaleX = bank.logoScale, scaleY = bank.logoScale),
                 )
             }
             Text(
