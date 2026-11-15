@@ -263,6 +263,7 @@ private fun WithdrawalCard(onClick: () -> Unit) {
 
 private fun Int.toSettingsDestination(): SettingsDetailDestination? = when (this) {
     R.string.settings_edit_profile -> SettingsDetailDestination.PROFILE
+    R.string.settings_connect_bank -> SettingsDetailDestination.BANK_CONNECTION
     R.string.settings_monthly_budget -> SettingsDetailDestination.MONTHLY_BUDGET
     R.string.settings_language -> SettingsDetailDestination.LANGUAGE
     R.string.settings_notifications -> SettingsDetailDestination.NOTIFICATIONS

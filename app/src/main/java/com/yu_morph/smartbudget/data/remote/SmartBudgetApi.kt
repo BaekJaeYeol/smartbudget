@@ -4,6 +4,7 @@ import android.content.Context
 import com.yu_morph.smartbudget.data.local.PreferenceStoreFactory
 import com.yu_morph.smartbudget.data.local.RemoteResourceStore
 import com.yu_morph.smartbudget.data.remote.api.AuthApi
+import com.yu_morph.smartbudget.data.remote.api.MockTransactionApi
 import com.yu_morph.smartbudget.data.remote.api.MonthlyBudgetApi
 import com.yu_morph.smartbudget.data.remote.api.OcrApi
 import com.yu_morph.smartbudget.data.remote.api.ReportApi
@@ -16,6 +17,7 @@ class SmartBudgetApi internal constructor(
     val auth: AuthApi,
     val transactions: TransactionApi,
     val monthlyBudgets: MonthlyBudgetApi,
+    val mockTransactions: MockTransactionApi,
     val reports: ReportApi,
     val ocr: OcrApi,
     val remoteResources: RemoteResourceStore,
@@ -27,6 +29,8 @@ class SmartBudgetApi internal constructor(
 object SmartBudgetApiFactory {
     const val DEVELOPMENT_BASE_URL =
         "https://smartbudget-dev-kc-260925.koreacentral.cloudapp.azure.com"
+    const val MOCK_TRANSACTION_BASE_URL =
+        "https://smartbudget-mock-api-yoon-20260918.azurewebsites.net"
 
     fun create(context: Context, baseUrl: String = DEVELOPMENT_BASE_URL): SmartBudgetApi {
         val json = SmartBudgetHttpClientFactory.defaultJson()
@@ -45,6 +49,7 @@ object SmartBudgetApiFactory {
             auth = AuthApi(executor, tokenStore),
             transactions = TransactionApi(executor),
             monthlyBudgets = MonthlyBudgetApi(executor),
+            mockTransactions = MockTransactionApi(client, json, MOCK_TRANSACTION_BASE_URL),
             reports = ReportApi(executor),
             ocr = OcrApi(),
             remoteResources = PreferenceStoreFactory.remoteResources(context),

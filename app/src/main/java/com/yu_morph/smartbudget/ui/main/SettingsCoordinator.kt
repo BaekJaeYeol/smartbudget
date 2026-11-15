@@ -12,8 +12,11 @@ import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.data.local.PreferenceStoreFactory
 import com.yu_morph.smartbudget.data.remote.ApiResult
 import com.yu_morph.smartbudget.data.remote.SmartBudgetApi
+import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.ReplaceMonthlyBudgetRequest
 import com.yu_morph.smartbudget.data.remote.model.SignInRequest
+import com.yu_morph.smartbudget.data.remote.model.TransactionSource
+import com.yu_morph.smartbudget.data.remote.model.TransactionType
 import com.yu_morph.smartbudget.data.remote.model.UpdateAccountRequest
 import java.time.YearMonth
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +35,7 @@ data class SettingsUiState(
     val budgetAmount: Int = DEFAULT_MONTHLY_BUDGET,
     val budgetHistory: List<BudgetHistoryItem> = emptyList(),
     val isLoading: Boolean = false,
+    val isBankSyncing: Boolean = false,
 )
 
 @Suppress("TooManyFunctions")
@@ -177,6 +181,57 @@ class SettingsCoordinator(
                 showToast(R.string.settings_budget_saved)
             },
         )
+    }
+
+    fun syncBankTransactions() {
+        if (state.isBankSyncing) return
+        scope.launch {
+            state = state.copy(isBankSyncing = true)
+            try {
+                val month = YearMonth.now()
+                val result = api.mockTransactions.list(
+                    startDate = month.atDay(1).toString(),
+                    endDate = month.atEndOfMonth().toString(),
+                )
+                if (result !is ApiResult.Success || result.data == null) {
+                    showFailure(result)
+                    return@launch
+                }
+                result.data.transactions.forEach { transaction ->
+                    val createResult =
+                        api.transactions.create(
+                            request =
+                                CreateTransactionRequest(
+                                    date = transaction.date,
+                                    type =
+                                        if (transaction.type == "INCOME") {
+                                            TransactionType.INCOME
+                                        } else {
+                                            TransactionType.EXPENSE
+                                        },
+                                    source = TransactionSource.FINANCIAL_SYNC,
+                                    category = transaction.category,
+                                    storeName = transaction.description,
+                                    amount = transaction.amount,
+                                ),
+                            idempotencyKey = "bank-sync-${transaction.transactionId}",
+                        )
+                    if (createResult !is ApiResult.Success) {
+                        showFailure(createResult)
+                        return@launch
+                    }
+                }
+                Toast.makeText(
+                    applicationContext,
+                    applicationContext.getString(R.string.settings_bank_sync_success, result.data.count),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            } catch (_: Exception) {
+                showToast(R.string.unknown_error)
+            } finally {
+                state = state.copy(isBankSyncing = false)
+            }
+        }
     }
 
     fun setLanguage(languageTag: String) {

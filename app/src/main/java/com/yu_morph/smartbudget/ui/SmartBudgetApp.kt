@@ -116,6 +116,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                         },
                         onLoadBudget = settingsCoordinator::loadMonthlyBudget,
                         onSaveBudget = settingsCoordinator::saveMonthlyBudget,
+                        onSyncBankTransactions = settingsCoordinator::syncBankTransactions,
                         onLanguageSelected = settingsCoordinator::setLanguage,
                         onNotificationChanged = settingsCoordinator::setNotification,
                         onDisplayModeChanged = settingsCoordinator::setDisplayMode,

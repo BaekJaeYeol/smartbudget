@@ -1,4 +1,4 @@
-@file:Suppress("MagicNumber", "MatchingDeclarationName", "TooManyFunctions")
+@file:Suppress("MagicNumber", "MatchingDeclarationName", "TooManyFunctions", "LongMethod")
 
 package com.yu_morph.smartbudget.ui.main
 
@@ -67,6 +67,7 @@ import java.util.Locale
 
 enum class SettingsDetailDestination {
     PROFILE,
+    BANK_CONNECTION,
     MONTHLY_BUDGET,
     LANGUAGE,
     NOTIFICATIONS,
@@ -84,6 +85,7 @@ internal fun SettingsDetailScreen(
     onUpdatePassword: (String, String) -> Unit,
     onLoadBudget: () -> Unit,
     onSaveBudget: (Int) -> Unit,
+    onSyncBankTransactions: () -> Unit,
     onLanguageSelected: (String) -> Unit,
     onNotificationChanged: (NotificationSetting, Boolean) -> Unit,
     onDisplayModeChanged: (DisplayMode) -> Unit,
@@ -124,6 +126,12 @@ internal fun SettingsDetailScreen(
                 modifier = Modifier.padding(innerPadding),
                 onLoad = onLoadBudget,
                 onSave = onSaveBudget,
+            )
+
+            SettingsDetailDestination.BANK_CONNECTION -> BankConnectionScreen(
+                isLoading = state.isBankSyncing,
+                modifier = Modifier.padding(innerPadding),
+                onConnect = onSyncBankTransactions,
             )
 
             SettingsDetailDestination.LANGUAGE -> LanguageSettings(
@@ -498,6 +506,7 @@ private fun SettingValueRow(label: String, value: String) {
 
 private fun SettingsDetailDestination.titleResource(): Int = when (this) {
     SettingsDetailDestination.PROFILE -> R.string.settings_edit_profile
+    SettingsDetailDestination.BANK_CONNECTION -> R.string.settings_connect_bank
     SettingsDetailDestination.MONTHLY_BUDGET -> R.string.settings_monthly_budget
     SettingsDetailDestination.LANGUAGE -> R.string.settings_language
     SettingsDetailDestination.NOTIFICATIONS -> R.string.settings_notifications
