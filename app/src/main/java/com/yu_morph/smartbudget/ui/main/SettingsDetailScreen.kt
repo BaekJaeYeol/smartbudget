@@ -77,9 +77,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 enum class SettingsDetailDestination {
-    PROFILE,
+    ACCOUNT,
     BANK_CONNECTION,
-    MONTHLY_BUDGET,
     LANGUAGE,
     NOTIFICATIONS,
     DISPLAY,
@@ -92,9 +91,8 @@ internal fun SettingsDetailScreen(
     destination: SettingsDetailDestination,
     state: SettingsUiState,
     onBack: () -> Unit,
-    onSaveProfile: (String, String, String) -> Unit,
+    onSaveAccount: (String, String, String, Int, Boolean, Boolean) -> Unit,
     onLoadBudget: () -> Unit,
-    onSaveBudget: (Int) -> Unit,
     onSyncBankTransactions: () -> Unit,
     onLanguageSelected: (String) -> Unit,
     onNotificationChanged: (NotificationSetting, Boolean) -> Unit,
@@ -132,18 +130,11 @@ internal fun SettingsDetailScreen(
         },
     ) { innerPadding ->
         when (destination) {
-            SettingsDetailDestination.PROFILE -> ProfileSettings(
-                state = state,
-                modifier = Modifier.padding(innerPadding),
-                onSave = onSaveProfile,
-                onSaveActionChanged = { saveAction = it },
-            )
-
-            SettingsDetailDestination.MONTHLY_BUDGET -> BudgetSettings(
+            SettingsDetailDestination.ACCOUNT -> AccountSettings(
                 state = state,
                 modifier = Modifier.padding(innerPadding),
                 onLoad = onLoadBudget,
-                onSave = onSaveBudget,
+                onSave = onSaveAccount,
                 onSaveActionChanged = { saveAction = it },
             )
 
@@ -180,10 +171,11 @@ internal fun SettingsDetailScreen(
 }
 
 @Composable
-private fun ProfileSettings(
+private fun AccountSettings(
     state: SettingsUiState,
     modifier: Modifier,
-    onSave: (String, String, String) -> Unit,
+    onLoad: () -> Unit,
+    onSave: (String, String, String, Int, Boolean, Boolean) -> Unit,
     onSaveActionChanged: (SettingsSaveAction) -> Unit,
 ) {
     val context = LocalContext.current
@@ -191,28 +183,47 @@ private fun ProfileSettings(
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
+    var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
+    val amount = amountText.toIntOrNull()
     val passwordUnchanged = currentPassword.isBlank() && newPassword.isBlank() && passwordConfirmation.isBlank()
-    val passwordValid =
-        currentPassword.isNotBlank() &&
-            SignUpValidation.isValidPassword(newPassword) &&
-            newPassword == passwordConfirmation
-    val hasChanges = displayName.trim() != state.displayName || !passwordUnchanged
+    val passwordValid = isPasswordUpdateValid(currentPassword, newPassword, passwordConfirmation)
+    val profileChanged = displayName.trim() != state.displayName || !passwordUnchanged
+    val budgetChanged = amountText != state.budgetAmount.toString()
     val saveAction =
-        remember(displayName, currentPassword, newPassword, passwordConfirmation, state.displayName, onSave) {
+        remember(
+            displayName,
+            currentPassword,
+            newPassword,
+            passwordConfirmation,
+            amount,
+            profileChanged,
+            budgetChanged,
+            onSave,
+        ) {
             SettingsSaveAction(
-                enabled = hasChanges,
+                enabled = profileChanged || budgetChanged,
                 onSave = {
                     if (!SignUpValidation.isValidDisplayName(displayName) || (!passwordUnchanged && !passwordValid)) {
                         Toast.makeText(context, R.string.settings_profile_invalid_input, Toast.LENGTH_SHORT).show()
+                    } else if (amount == null || amount !in 0..10_000_000) {
+                        Toast.makeText(context, R.string.settings_budget_invalid_input, Toast.LENGTH_SHORT).show()
                     } else {
-                        onSave(displayName.trim(), currentPassword, newPassword)
+                        onSave(
+                            displayName.trim(),
+                            currentPassword,
+                            newPassword,
+                            amount,
+                            profileChanged,
+                            budgetChanged,
+                        )
                     }
                 },
             )
         }
     LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
+    LaunchedEffect(Unit) { onLoad() }
     SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_name_tab)) {
+        SettingsSection(title = stringResource(R.string.settings_name_section)) {
             AuthTextField(
                 value = displayName,
                 onValueChange = { displayName = it },
@@ -224,7 +235,7 @@ private fun ProfileSettings(
                 fontSize = 12.sp,
             )
         }
-        SettingsSection(title = stringResource(R.string.settings_password_tab)) {
+        SettingsSection(title = stringResource(R.string.settings_password_section)) {
             PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
             PasswordField(newPassword, { newPassword = it }, R.string.settings_new_password)
             PasswordField(passwordConfirmation, { passwordConfirmation = it }, R.string.password_confirm_hint)
@@ -234,38 +245,7 @@ private fun ProfileSettings(
                 fontSize = 12.sp,
             )
         }
-    }
-}
-
-@Composable
-private fun BudgetSettings(
-    state: SettingsUiState,
-    modifier: Modifier,
-    onLoad: () -> Unit,
-    onSave: (Int) -> Unit,
-    onSaveActionChanged: (SettingsSaveAction) -> Unit,
-) {
-    val context = LocalContext.current
-    var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
-    val amount = amountText.toIntOrNull()
-    val hasChanges = amountText != state.budgetAmount.toString()
-    val saveAction =
-        remember(amount, hasChanges, onSave) {
-            SettingsSaveAction(
-                enabled = hasChanges,
-                onSave = {
-                    if (amount == null || amount !in 0..10_000_000) {
-                        Toast.makeText(context, R.string.settings_budget_invalid_input, Toast.LENGTH_SHORT).show()
-                    } else {
-                        onSave(amount)
-                    }
-                },
-            )
-        }
-    LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
-    LaunchedEffect(Unit) { onLoad() }
-    SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_budget_setup_tab)) {
+        SettingsSection(title = stringResource(R.string.settings_monthly_budget_section)) {
             AuthTextField(
                 value = amountText,
                 onValueChange = { value -> amountText = value.filter(Char::isDigit).take(8) },
@@ -282,8 +262,11 @@ private fun BudgetSettings(
                     )
                 }
             }
-        }
-        SettingsSection(title = stringResource(R.string.settings_budget_history_tab)) {
+            Text(
+                text = stringResource(R.string.settings_budget_history_tab),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
             if (state.budgetHistory.isEmpty()) {
                 Text(
                     stringResource(R.string.settings_budget_history_empty),
@@ -305,6 +288,9 @@ private fun BudgetSettings(
 }
 
 private data class SettingsSaveAction(val enabled: Boolean, val onSave: () -> Unit)
+
+private fun isPasswordUpdateValid(currentPassword: String, newPassword: String, confirmation: String): Boolean =
+    currentPassword.isNotBlank() && SignUpValidation.isValidPassword(newPassword) && newPassword == confirmation
 
 @Composable
 private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSelected: (String) -> Unit) {
@@ -470,7 +456,7 @@ private fun SettingsSection(title: String, content: @Composable ColumnScope.() -
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
         content()
     }
 }
@@ -565,9 +551,8 @@ private fun SettingValueRow(label: String, value: String) {
 }
 
 private fun SettingsDetailDestination.titleResource(): Int = when (this) {
-    SettingsDetailDestination.PROFILE -> R.string.settings_edit_profile
+    SettingsDetailDestination.ACCOUNT -> R.string.settings_account_settings
     SettingsDetailDestination.BANK_CONNECTION -> R.string.settings_connect_bank
-    SettingsDetailDestination.MONTHLY_BUDGET -> R.string.settings_monthly_budget
     SettingsDetailDestination.LANGUAGE -> R.string.settings_language
     SettingsDetailDestination.NOTIFICATIONS -> R.string.settings_notifications
     SettingsDetailDestination.DISPLAY -> R.string.settings_display

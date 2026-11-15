@@ -62,9 +62,8 @@ private val SettingsGroups =
             title = R.string.settings_account_section,
             entries =
                 listOf(
-                    SettingsEntry(R.string.settings_edit_profile),
+                    SettingsEntry(R.string.settings_account_settings),
                     SettingsEntry(R.string.settings_connect_bank),
-                    SettingsEntry(R.string.settings_monthly_budget),
                 ),
         ),
         SettingsGroup(
@@ -262,9 +261,8 @@ private fun WithdrawalCard(onClick: () -> Unit) {
 }
 
 private fun Int.toSettingsDestination(): SettingsDetailDestination? = when (this) {
-    R.string.settings_edit_profile -> SettingsDetailDestination.PROFILE
+    R.string.settings_account_settings -> SettingsDetailDestination.ACCOUNT
     R.string.settings_connect_bank -> SettingsDetailDestination.BANK_CONNECTION
-    R.string.settings_monthly_budget -> SettingsDetailDestination.MONTHLY_BUDGET
     R.string.settings_language -> SettingsDetailDestination.LANGUAGE
     R.string.settings_notifications -> SettingsDetailDestination.NOTIFICATIONS
     R.string.settings_display -> SettingsDetailDestination.DISPLAY

@@ -41,6 +41,7 @@
     <string name="settings_profile_default_name">User</string>
     <string name="settings_user_id_unavailable">User ID unavailable</string>
     <string name="settings_account_section">Account</string>
+    <string name="settings_account_settings">Account settings</string>
     <string name="settings_edit_profile">Edit profile</string>
     <string name="settings_connect_bank">Connect bank data</string>
     <string name="settings_bank_select_all">Select all</string>
@@ -91,6 +92,7 @@
     <string name="settings_display_name_section">Display name</string>
     <string name="settings_password_section">Change password</string>
     <string name="settings_name_tab">Change name</string>
+    <string name="settings_name_section">Name</string>
     <string name="settings_password_tab">Change password</string>
     <string name="settings_save_action">Save</string>
     <string name="settings_save_display_name">Save display name</string>
@@ -98,11 +100,13 @@
     <string name="settings_new_password">New password</string>
     <string name="settings_change_password">Change password</string>
     <string name="settings_profile_updated">Your display name was updated.</string>
+    <string name="settings_account_settings_saved">Your account settings were saved.</string>
     <string name="settings_password_updated">Your password was changed. Please sign in again.</string>
     <string name="settings_password_incorrect">The password is incorrect.</string>
     <string name="settings_profile_invalid_input">Check the name and password format.</string>
     <string name="settings_current_month_budget">This month’s budget</string>
     <string name="settings_budget_setup_tab">Set budget</string>
+    <string name="settings_monthly_budget_section">Monthly budget</string>
     <string name="settings_budget_history_tab">Change history</string>
     <string name="settings_budget_amount">Budget amount</string>
     <string name="settings_won">KRW</string>

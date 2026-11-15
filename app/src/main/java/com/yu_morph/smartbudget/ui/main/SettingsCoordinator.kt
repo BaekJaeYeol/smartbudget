@@ -74,34 +74,63 @@ class SettingsCoordinator(
         }
     }
 
-    fun updateProfile(
+    fun saveAccountSettings(
         displayName: String,
         currentPassword: String,
         newPassword: String,
+        budgetAmount: Int,
+        profileChanged: Boolean,
+        budgetChanged: Boolean,
         onSuccess: (Boolean) -> Unit,
     ) {
+        if (state.isLoading) return
         val passwordChanged = newPassword.isNotBlank()
-        execute(
-            request = {
-                api.auth.updateAccount(
-                    UpdateAccountRequest(
-                        displayName = displayName,
-                        currentPassword = currentPassword.takeIf { passwordChanged },
-                        password = newPassword.takeIf { passwordChanged },
-                    ),
-                )
-            },
-            onSuccess = {
-                state = state.copy(displayName = displayName)
+        scope.launch {
+            state = state.copy(isLoading = true)
+            try {
+                if (budgetChanged) {
+                    val budgetResult =
+                        api.monthlyBudgets.replace(
+                            YearMonth.now().toString(),
+                            ReplaceMonthlyBudgetRequest(budgetAmount),
+                        )
+                    if (budgetResult !is ApiResult.Success) {
+                        showFailure(budgetResult)
+                        return@launch
+                    }
+                }
+                if (profileChanged) {
+                    val profileResult =
+                        api.auth.updateAccount(
+                            UpdateAccountRequest(
+                                displayName = displayName,
+                                currentPassword = currentPassword.takeIf { passwordChanged },
+                                password = newPassword.takeIf { passwordChanged },
+                            ),
+                        )
+                    if (profileResult !is ApiResult.Success) {
+                        showFailure(profileResult)
+                        return@launch
+                    }
+                }
+                state = state.copy(displayName = displayName, budgetAmount = budgetAmount)
                 if (passwordChanged) {
                     userIdentityStore.clear()
                     showToast(R.string.settings_password_updated)
-                } else {
+                } else if (profileChanged && budgetChanged) {
+                    showToast(R.string.settings_account_settings_saved)
+                } else if (profileChanged) {
                     showToast(R.string.settings_profile_updated)
+                } else {
+                    showToast(R.string.settings_budget_saved)
                 }
                 onSuccess(passwordChanged)
-            },
-        )
+            } catch (_: Exception) {
+                showToast(R.string.unknown_error)
+            } finally {
+                state = state.copy(isLoading = false)
+            }
+        }
     }
 
     fun deleteAccount(onSuccess: () -> Unit) {
@@ -162,21 +191,6 @@ class SettingsCoordinator(
                 state = state.copy(isLoading = false)
             }
         }
-    }
-
-    fun saveMonthlyBudget(amount: Int) {
-        execute(
-            request = {
-                api.monthlyBudgets.replace(
-                    YearMonth.now().toString(),
-                    ReplaceMonthlyBudgetRequest(amount),
-                )
-            },
-            onSuccess = {
-                state = state.copy(budgetAmount = amount)
-                showToast(R.string.settings_budget_saved)
-            },
-        )
     }
 
     fun syncBankTransactions(onSuccess: () -> Unit) {
