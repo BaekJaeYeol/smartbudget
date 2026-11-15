@@ -88,7 +88,10 @@
     <string name="settings_available_languages">사용 가능한 언어</string>
     <string name="settings_korean">한국어</string>
     <string name="settings_english">English</string>
-    <string name="settings_notification_categories">알림 수신 설정</string>
+    <string name="settings_notification_categories">예산 한도</string>
+    <string name="settings_analysis_section">소비 분석</string>
+    <string name="settings_korean_flag">대한민국 국기</string>
+    <string name="settings_english_flag">미국 국기</string>
     <string name="settings_budget_approaching_notification">예산 한도 도달 임박 알림</string>
     <string name="settings_budget_exceeded_notification">예산 한도 초과 알림</string>
     <string name="settings_analysis_notification">소비 분석 알림</string>

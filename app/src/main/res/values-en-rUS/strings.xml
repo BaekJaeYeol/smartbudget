@@ -88,7 +88,10 @@
     <string name="settings_available_languages">Available languages</string>
     <string name="settings_korean">한국어</string>
     <string name="settings_english">English</string>
-    <string name="settings_notification_categories">Notification preferences</string>
+    <string name="settings_notification_categories">Budget limit</string>
+    <string name="settings_analysis_section">Spending analysis</string>
+    <string name="settings_korean_flag">Flag of South Korea</string>
+    <string name="settings_english_flag">Flag of the United States</string>
     <string name="settings_budget_approaching_notification">Budget limit approaching</string>
     <string name="settings_budget_exceeded_notification">Budget limit exceeded</string>
     <string name="settings_analysis_notification">Spending analysis</string>

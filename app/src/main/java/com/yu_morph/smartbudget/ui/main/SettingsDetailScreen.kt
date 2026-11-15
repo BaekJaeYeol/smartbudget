@@ -4,6 +4,8 @@ package com.yu_morph.smartbudget.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,12 +13,16 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,7 +31,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -41,7 +46,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -255,19 +263,24 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
 
 @Composable
 private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSelected: (String) -> Unit) {
+    val languages =
+        listOf(
+            LanguageOption("en-US", "English", R.drawable.flag_us, R.string.settings_english_flag),
+            LanguageOption("ko", "한국어", R.drawable.flag_kr, R.string.settings_korean_flag),
+        ).sortedBy { it.tag }
     SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_available_languages)) {
-            SelectableRow(
-                title = stringResource(R.string.settings_korean),
-                subtitle = "🇰🇷",
-                selected = selectedLanguage == "ko",
-                onClick = { onSelected("ko") },
-            )
-            SelectableRow(
-                title = stringResource(R.string.settings_english),
-                subtitle = "🇺🇸",
-                selected = selectedLanguage == "en-US",
-                onClick = { onSelected("en-US") },
+        languages.forEach { language ->
+            SelectionRow(
+                title = language.nativeName,
+                selected = selectedLanguage == language.tag,
+                onClick = { onSelected(language.tag) },
+                leadingContent = {
+                    Image(
+                        painter = painterResource(language.flagResource),
+                        contentDescription = stringResource(language.flagDescriptionResource),
+                        modifier = Modifier.size(width = 34.dp, height = 24.dp).clip(RoundedCornerShape(5.dp)),
+                    )
+                },
             )
         }
     }
@@ -289,6 +302,8 @@ private fun NotificationSettings(
                 R.string.settings_budget_exceeded_notification,
                 state.appSettings.budgetExceededNotification,
             ) { onChanged(NotificationSetting.BUDGET_EXCEEDED, it) }
+        }
+        SettingsSection(title = stringResource(R.string.settings_analysis_section)) {
             SwitchRow(R.string.settings_analysis_notification, state.appSettings.analysisNotification) {
                 onChanged(NotificationSetting.ANALYSIS, it)
             }
@@ -299,14 +314,12 @@ private fun NotificationSettings(
 @Composable
 private fun DisplaySettings(selectedMode: DisplayMode, modifier: Modifier, onSelected: (DisplayMode) -> Unit) {
     SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_theme)) {
-            DisplayMode.entries.forEach { mode ->
-                SelectableRow(
-                    title = stringResource(mode.labelResource()),
-                    selected = selectedMode == mode,
-                    onClick = { onSelected(mode) },
-                )
-            }
+        DisplayMode.entries.forEach { mode ->
+            SelectionRow(
+                title = stringResource(mode.labelResource()),
+                selected = selectedMode == mode,
+                onClick = { onSelected(mode) },
+            )
         }
     }
 }
@@ -424,25 +437,54 @@ private fun PasswordField(value: String, onValueChange: (String) -> Unit, label:
 }
 
 @Composable
-private fun SelectableRow(title: String, selected: Boolean, onClick: () -> Unit, subtitle: String? = null) {
+private fun SelectionRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    leadingContent: (@Composable () -> Unit)? = null,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(onClick = onClick).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        subtitle?.let { Text(it, modifier = Modifier.padding(end = 12.dp), fontSize = 24.sp) }
+        leadingContent?.let {
+            it()
+            androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+        }
         Text(title, modifier = Modifier.weight(1f), fontSize = 16.sp)
-        RadioButton(selected = selected, onClick = onClick)
+        if (selected) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.size(24.dp).background(SmartBudgetGreen, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun SwitchRow(label: Int, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }.padding(vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .clickable { onCheckedChange(!checked) }
+                .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(label), modifier = Modifier.weight(1f), fontSize = 16.sp)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.graphicsLayer(scaleX = 0.82f, scaleY = 0.82f),
+        )
     }
 }
 
@@ -462,6 +504,13 @@ private fun SettingsDetailDestination.titleResource(): Int = when (this) {
     SettingsDetailDestination.DISPLAY -> R.string.settings_display
     SettingsDetailDestination.WITHDRAWAL -> R.string.settings_withdraw
 }
+
+private data class LanguageOption(
+    val tag: String,
+    val nativeName: String,
+    val flagResource: Int,
+    val flagDescriptionResource: Int,
+)
 
 private fun DisplayMode.labelResource(): Int = when (this) {
     DisplayMode.LIGHT -> R.string.settings_theme_light
