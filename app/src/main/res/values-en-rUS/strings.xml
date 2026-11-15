@@ -45,7 +45,7 @@
     <string name="settings_connect_bank">Connect bank data</string>
     <string name="settings_bank_select_all">Select all</string>
     <string name="settings_bank_connection_title">Connect your bank data</string>
-    <string name="settings_bank_connection_subtitle">Select banks to securely import this month’s transactions.</string>
+    <string name="settings_bank_connection_subtitle">Select banks to securely import your transactions.</string>
     <string name="settings_bank_connect">Connect</string>
     <string name="settings_bank_fetching">Fetching bank data…</string>
     <string name="settings_bank_sync_success">Connected %1$d transactions.</string>

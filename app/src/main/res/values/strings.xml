@@ -45,7 +45,7 @@
     <string name="settings_connect_bank">은행 데이터 연동</string>
     <string name="settings_bank_select_all">한 번에 선택</string>
     <string name="settings_bank_connection_title">은행 데이터를 연결해 보세요</string>
-    <string name="settings_bank_connection_subtitle">연동할 은행을 선택하면 이번 달 거래내역을 안전하게 불러옵니다.</string>
+    <string name="settings_bank_connection_subtitle">연동할 은행을 선택하면 거래내역을 안전하게 불러옵니다.</string>
     <string name="settings_bank_connect">연동</string>
     <string name="settings_bank_fetching">은행 데이터를 가져오는 중…</string>
     <string name="settings_bank_sync_success">거래내역 %1$d건을 연동했습니다.</string>

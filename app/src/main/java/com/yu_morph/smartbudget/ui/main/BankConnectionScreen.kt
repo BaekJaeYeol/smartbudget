@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.caverock.androidsvg.SVG
@@ -107,8 +110,10 @@ internal fun BankConnectionScreen(isLoading: Boolean, modifier: Modifier = Modif
                 }
             },
         )
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
             modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(BankOptions, key = { it.key }) { bank ->
@@ -161,14 +166,15 @@ private fun BankSelectionHeader(selectedAll: Boolean, onToggleAll: () -> Unit) {
 private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     Card(
-        modifier = Modifier.fillMaxWidth().clip(shape).clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().height(100.dp).clip(shape).clickable(onClick = onClick),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(2.dp, if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
                 SvgAssetImage(
@@ -184,11 +190,12 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
             }
             Text(
                 text = stringResource(bank.nameResource),
-                modifier = Modifier.padding(start = 10.dp).weight(1f),
-                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
             )
-            SelectionCheck(selected)
         }
     }
 }
