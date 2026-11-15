@@ -60,6 +60,13 @@
     <string name="bank_busan">Busan Bank</string>
     <string name="bank_sc">SC First Bank</string>
     <string name="bank_suhyup">Sh Suhyup Bank</string>
+    <string name="bank_citi">Citibank Korea</string>
+    <string name="bank_im">iM Bank</string>
+    <string name="bank_gyeongnam">Kyongnam Bank</string>
+    <string name="bank_gwangju">Kwangju Bank</string>
+    <string name="bank_jeonbuk">Jeonbuk Bank</string>
+    <string name="bank_jeju">Jeju Bank</string>
+    <string name="bank_kdb">Korea Development Bank</string>
     <string name="settings_app_section">App settings</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_display">Display</string>

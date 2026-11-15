@@ -60,6 +60,13 @@
     <string name="bank_busan">부산은행</string>
     <string name="bank_sc">SC제일은행</string>
     <string name="bank_suhyup">Sh수협은행</string>
+    <string name="bank_citi">한국씨티은행</string>
+    <string name="bank_im">iM뱅크</string>
+    <string name="bank_gyeongnam">경남은행</string>
+    <string name="bank_gwangju">광주은행</string>
+    <string name="bank_jeonbuk">전북은행</string>
+    <string name="bank_jeju">제주은행</string>
+    <string name="bank_kdb">한국산업은행</string>
     <string name="settings_app_section">앱 설정</string>
     <string name="settings_notifications">알림</string>
     <string name="settings_display">디스플레이</string>

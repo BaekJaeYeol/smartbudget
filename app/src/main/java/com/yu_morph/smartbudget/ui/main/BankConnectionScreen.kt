@@ -66,12 +66,19 @@ private val BankOptions =
         BankOption("woori", R.string.bank_woori, "우리은행 심볼.svg", 28, 28),
         BankOption("nh", R.string.bank_nh, "NH농협은행 심볼.svg", 23, 29),
         BankOption("ibk", R.string.bank_ibk, "IBK기업은행 심볼.svg", 28, 28),
-        BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
-        BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 27),
-        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 14),
-        BankOption("busan", R.string.bank_busan, "BNK부산은행 심볼.svg", 32, 12),
         BankOption("sc", R.string.bank_sc, "SC제일은행 심볼.svg", 19, 30),
+        BankOption("citi", R.string.bank_citi, "한국씨티은행 심볼.svg", 30, 20),
+        BankOption("im", R.string.bank_im, "iM뱅크 심볼.svg", 32, 16),
+        BankOption("busan", R.string.bank_busan, "BNK부산은행 심볼.svg", 32, 10),
+        BankOption("gyeongnam", R.string.bank_gyeongnam, "BNK경남은행 심볼.svg", 32, 10),
+        BankOption("gwangju", R.string.bank_gwangju, "광주은행 심볼.svg", 28, 28),
+        BankOption("jeonbuk", R.string.bank_jeonbuk, "전북은행 심볼.svg", 28, 28),
+        BankOption("jeju", R.string.bank_jeju, "제주은행 심볼.svg", 28, 28),
+        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12),
+        BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
+        BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 26),
         BankOption("suhyup", R.string.bank_suhyup, "수협은행 심볼.svg", 30, 22),
+        BankOption("kdb", R.string.bank_kdb, "한국산업은행 심볼.svg", 30, 27),
     )
 
 @Composable
@@ -147,6 +154,8 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
                 SvgAssetImage(
                     assetName = bank.logoAssetName,
                     contentDescription = stringResource(R.string.settings_bank_logo, stringResource(bank.nameResource)),
+                    renderWidth = bank.logoWidth,
+                    renderHeight = bank.logoHeight,
                     modifier = Modifier.size(bank.logoWidth.dp, bank.logoHeight.dp),
                 )
             }
@@ -162,12 +171,20 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SvgAssetImage(assetName: String, contentDescription: String, modifier: Modifier = Modifier) {
+private fun SvgAssetImage(
+    assetName: String,
+    contentDescription: String,
+    renderWidth: Int,
+    renderHeight: Int,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
-    val image = remember(assetName) {
+    val image = remember(assetName, renderWidth, renderHeight) {
         context.assets.open(assetName).use { input ->
-            val picture = SVG.getFromInputStream(input).renderToPicture(SVG_RENDER_SIZE, SVG_RENDER_SIZE)
-            Bitmap.createBitmap(SVG_RENDER_SIZE, SVG_RENDER_SIZE, Bitmap.Config.ARGB_8888).also { bitmap ->
+            val bitmapWidth = renderWidth * SVG_RENDER_SCALE
+            val bitmapHeight = renderHeight * SVG_RENDER_SCALE
+            val picture = SVG.getFromInputStream(input).renderToPicture(bitmapWidth, bitmapHeight)
+            Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888).also { bitmap ->
                 Canvas(bitmap).drawPicture(picture)
             }.asImageBitmap()
         }
@@ -180,7 +197,7 @@ private fun SvgAssetImage(assetName: String, contentDescription: String, modifie
     )
 }
 
-private const val SVG_RENDER_SIZE = 256
+private const val SVG_RENDER_SCALE = 8
 
 @Composable
 private fun SelectionCheck(selected: Boolean) {
