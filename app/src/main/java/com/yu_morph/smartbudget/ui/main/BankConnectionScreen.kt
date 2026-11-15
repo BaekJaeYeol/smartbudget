@@ -8,6 +8,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,7 +78,7 @@ private val BankOptions =
         BankOption("gwangju", R.string.bank_gwangju, "광주은행 심볼.svg", 28, 28),
         BankOption("jeonbuk", R.string.bank_jeonbuk, "전북은행 심볼.svg", 28, 28),
         BankOption("jeju", R.string.bank_jeju, "제주은행 심볼.svg", 28, 28),
-        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12, logoScale = 1.3f),
+        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12, logoScale = 2f),
         BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
         BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 26),
         BankOption("suhyup", R.string.bank_suhyup, "수협은행 심볼.svg", 30, 22),
@@ -95,32 +96,19 @@ internal fun BankConnectionScreen(isLoading: Boolean, modifier: Modifier = Modif
         modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        if (selectedKeys.size == BankOptions.size) {
-                            selectedKeys.clear()
-                        } else {
-                            selectedKeys.clear()
-                            selectedKeys.addAll(BankOptions.map { it.key })
-                        }
-                    }.padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.settings_bank_select_all),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.weight(1f))
-            SelectionCheck(selectedKeys.size == BankOptions.size)
-        }
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+        BankSelectionHeader(
+            selectedAll = selectedKeys.size == BankOptions.size,
+            onToggleAll = {
+                if (selectedKeys.size == BankOptions.size) {
+                    selectedKeys.clear()
+                } else {
+                    selectedKeys.clear()
+                    selectedKeys.addAll(BankOptions.map { it.key })
+                }
+            },
+        )
+        LazyColumn(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(BankOptions, key = { it.key }) { bank ->
@@ -142,10 +130,39 @@ internal fun BankConnectionScreen(isLoading: Boolean, modifier: Modifier = Modif
 }
 
 @Composable
+private fun BankSelectionHeader(selectedAll: Boolean, onToggleAll: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(
+            text = stringResource(R.string.settings_bank_connection_title),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.settings_bank_connection_subtitle),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_bank_select_all),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.weight(1f))
+            SelectionCheck(selected = selectedAll, onClick = onToggleAll)
+        }
+    }
+}
+
+@Composable
 private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(shape).clickable(onClick = onClick),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outlineVariant),
     ) {
@@ -216,17 +233,29 @@ private fun SvgAssetImage(
 private const val SVG_RENDER_SCALE = 8
 
 @Composable
-private fun SelectionCheck(selected: Boolean) {
+private fun SelectionCheck(selected: Boolean, onClick: (() -> Unit)? = null) {
+    val indicatorColor = if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outline
+    val interactionModifier =
+        if (onClick == null) {
+            Modifier
+        } else {
+            Modifier.clip(CircleShape).clickable(onClick = onClick)
+        }
     Box(
         modifier =
             Modifier
                 .size(22.dp)
-                .background(if (selected) SmartBudgetGreen else Color.Transparent, CircleShape),
+                .background(if (selected) SmartBudgetGreen else Color.Transparent, CircleShape)
+                .border(1.dp, indicatorColor, CircleShape)
+                .then(interactionModifier),
         contentAlignment = Alignment.Center,
     ) {
-        if (selected) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-        }
+        Icon(
+            Icons.Rounded.Check,
+            contentDescription = null,
+            tint = if (selected) Color.White else indicatorColor,
+            modifier = Modifier.size(15.dp),
+        )
     }
 }
 
