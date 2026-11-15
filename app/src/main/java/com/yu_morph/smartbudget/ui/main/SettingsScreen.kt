@@ -155,7 +155,7 @@ internal fun SettingsScreen(
 @Composable
 private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 16.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 20.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
@@ -171,7 +171,7 @@ private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> U
             )
         }
         Column(
-            modifier = Modifier.padding(start = 12.dp).weight(1f)
+            modifier = Modifier.padding(start = 12.dp).weight(1f),
         ) {
             Text(text = displayName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(
