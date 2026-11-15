@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 
 private const val BUDGET_HISTORY_MONTHS = 12L
 private const val TRANSACTION_PAGE_LIMIT = 100
+private const val BANK_SYNC_START_DATE = "2025-01-01"
+private const val BANK_SYNC_END_DATE = "2026-12-31"
 
 data class BudgetHistoryItem(val month: YearMonth, val amount: Int)
 
@@ -191,16 +193,15 @@ class SettingsCoordinator(
         scope.launch {
             state = state.copy(isBankSyncing = true)
             try {
-                val month = YearMonth.now()
                 val result = api.mockTransactions.list(
-                    startDate = month.atDay(1).toString(),
-                    endDate = month.atEndOfMonth().toString(),
+                    startDate = BANK_SYNC_START_DATE,
+                    endDate = BANK_SYNC_END_DATE,
                 )
                 if (result !is ApiResult.Success || result.data == null) {
                     showFailure(result)
                     return@launch
                 }
-                if (!deleteTransactionsForMonth(month)) return@launch
+                if (!deleteTransactionsInSyncRange()) return@launch
                 val syncSessionId = UUID.randomUUID().toString()
                 result.data.transactions.forEach { transaction ->
                     val createResult =
@@ -240,20 +241,20 @@ class SettingsCoordinator(
         }
     }
 
-    private suspend fun deleteTransactionsForMonth(month: YearMonth): Boolean {
-        val transactionIds = loadTransactionIdsForMonth(month) ?: return false
+    private suspend fun deleteTransactionsInSyncRange(): Boolean {
+        val transactionIds = loadTransactionIdsInSyncRange() ?: return false
         return deleteTransactions(transactionIds)
     }
 
-    private suspend fun loadTransactionIdsForMonth(month: YearMonth): List<Int>? {
+    private suspend fun loadTransactionIdsInSyncRange(): List<Int>? {
         val transactionIds = mutableListOf<Int>()
         var cursor: String? = null
         do {
             val result =
                 api.transactions.list(
                     TransactionListQuery(
-                        startDate = month.atDay(1).toString(),
-                        endDate = month.atEndOfMonth().toString(),
+                        startDate = BANK_SYNC_START_DATE,
+                        endDate = BANK_SYNC_END_DATE,
                         limit = TRANSACTION_PAGE_LIMIT,
                         cursor = cursor,
                     ),
