@@ -148,6 +148,7 @@ internal fun BudgetBookDetailScreen(month: YearMonth, onMonthChange: (YearMonth)
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                expandedHeight = 52.dp,
                 title = {
                     Text(
                         text = stringResource(R.string.budget_book_detail),

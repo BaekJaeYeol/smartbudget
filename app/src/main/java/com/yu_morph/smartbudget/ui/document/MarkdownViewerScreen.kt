@@ -82,6 +82,7 @@ internal fun MarkdownViewerScreen(document: MarkdownDocument, onBack: () -> Unit
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                expandedHeight = 52.dp,
                 title = {
                     Text(
                         text = stringResource(document.titleResource),
