@@ -127,11 +127,9 @@
     <string name="settings_theme_light">Light mode</string>
     <string name="settings_theme_dark">Dark mode</string>
     <string name="settings_theme_system">System default</string>
-    <string name="settings_withdraw_description">Deleting your account permanently removes its saved information. Confirm your current password to continue.</string>
     <string name="settings_withdraw_subtitle">Your budgets and spending history will disappear. Please make sure before continuing.</string>
     <string name="settings_withdraw_robot_description">Sad SmartBudget robot</string>
     <string name="settings_withdraw_action">Delete</string>
-    <string name="settings_verify_password">Verify password</string>
     <string name="settings_withdraw_confirm_title">Delete your account?</string>
     <string name="settings_withdraw_confirm_message">Your account and related data will be deleted. This action cannot be undone.</string>
     <string name="settings_withdraw_confirm_action">Delete account</string>

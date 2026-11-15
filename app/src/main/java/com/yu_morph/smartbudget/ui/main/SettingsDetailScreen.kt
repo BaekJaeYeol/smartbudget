@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -98,7 +99,6 @@ internal fun SettingsDetailScreen(
     onLanguageSelected: (String) -> Unit,
     onNotificationChanged: (NotificationSetting, Boolean) -> Unit,
     onDisplayModeChanged: (DisplayMode) -> Unit,
-    onVerifyWithdrawal: (String, () -> Unit) -> Unit,
     onDeleteAccount: () -> Unit,
 ) {
     var saveAction by remember(destination) { mutableStateOf<SettingsSaveAction?>(null) }
@@ -173,7 +173,6 @@ internal fun SettingsDetailScreen(
 
             SettingsDetailDestination.WITHDRAWAL -> WithdrawalSettings(
                 modifier = Modifier.padding(innerPadding),
-                onVerify = onVerifyWithdrawal,
                 onDeleteAccount = onDeleteAccount,
             )
         }
@@ -379,14 +378,15 @@ private fun DisplaySettings(selectedMode: DisplayMode, modifier: Modifier, onSel
 }
 
 @Composable
-private fun WithdrawalSettings(
-    modifier: Modifier,
-    onVerify: (String, () -> Unit) -> Unit,
-    onDeleteAccount: () -> Unit,
-) {
-    var password by rememberSaveable { mutableStateOf("") }
+private fun WithdrawalSettings(modifier: Modifier, onDeleteAccount: () -> Unit) {
     var showConfirmation by rememberSaveable { mutableStateOf(false) }
-    SettingsColumn(modifier) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(top = 20.dp, start = 24.dp, end = 24.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         Text(
             text = stringResource(R.string.settings_withdraw_confirm_title),
             fontSize = 24.sp,
@@ -396,20 +396,19 @@ private fun WithdrawalSettings(
             text = stringResource(R.string.settings_withdraw_subtitle),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Image(
-            painter = painterResource(R.drawable.account_withdrawal_robot),
-            contentDescription = stringResource(R.string.settings_withdraw_robot_description),
-            modifier = Modifier.align(Alignment.CenterHorizontally).size(210.dp),
-        )
-        Text(
-            stringResource(R.string.settings_withdraw_description),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        PasswordField(password, { password = it }, R.string.settings_current_password)
+        Box(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.account_withdrawal_robot),
+                contentDescription = stringResource(R.string.settings_withdraw_robot_description),
+                modifier = Modifier.size(210.dp),
+            )
+        }
         PrimaryAuthButton(
             text = stringResource(R.string.settings_withdraw_action),
-            onClick = { onVerify(password) { showConfirmation = true } },
-            enabled = password.isNotBlank(),
+            onClick = { showConfirmation = true },
         )
     }
     if (showConfirmation) {
@@ -418,11 +417,11 @@ private fun WithdrawalSettings(
             title = { Text(stringResource(R.string.settings_withdraw_confirm_title)) },
             text = { Text(stringResource(R.string.settings_withdraw_confirm_message)) },
             confirmButton = {
-                TextButton(onClick = onDeleteAccount) {
-                    Text(
-                        stringResource(R.string.settings_withdraw_confirm_action),
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                TextButton(
+                    onClick = onDeleteAccount,
+                    colors = ButtonDefaults.textButtonColors(contentColor = SmartBudgetGreen),
+                ) {
+                    Text(stringResource(R.string.settings_withdraw_confirm_action))
                 }
             },
             dismissButton = {

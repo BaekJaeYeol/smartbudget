@@ -127,11 +127,9 @@
     <string name="settings_theme_light">라이트 모드</string>
     <string name="settings_theme_dark">다크 모드</string>
     <string name="settings_theme_system">시스템 설정</string>
-    <string name="settings_withdraw_description">계정을 탈퇴하면 저장된 정보를 복구할 수 없습니다. 계속하려면 현재 비밀번호를 확인해 주세요.</string>
     <string name="settings_withdraw_subtitle">함께 쌓아 온 예산과 소비 기록이 모두 사라져요. 결정하기 전에 한 번 더 확인해 주세요.</string>
     <string name="settings_withdraw_robot_description">슬퍼하는 SmartBudget 로봇</string>
     <string name="settings_withdraw_action">탈퇴</string>
-    <string name="settings_verify_password">비밀번호 확인</string>
     <string name="settings_withdraw_confirm_title">정말 탈퇴하시겠어요?</string>
     <string name="settings_withdraw_confirm_message">계정과 관련 데이터가 삭제되며 이 작업은 되돌릴 수 없습니다.</string>
     <string name="settings_withdraw_confirm_action">탈퇴하기</string>

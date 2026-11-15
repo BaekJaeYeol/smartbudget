@@ -15,7 +15,6 @@ import com.yu_morph.smartbudget.data.remote.SmartBudgetApi
 import com.yu_morph.smartbudget.data.remote.api.TransactionListQuery
 import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.ReplaceMonthlyBudgetRequest
-import com.yu_morph.smartbudget.data.remote.model.SignInRequest
 import com.yu_morph.smartbudget.data.remote.model.TransactionSource
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
 import com.yu_morph.smartbudget.data.remote.model.UpdateAccountRequest
@@ -102,18 +101,6 @@ class SettingsCoordinator(
                 }
                 onSuccess(passwordChanged)
             },
-        )
-    }
-
-    fun verifyWithdrawalPassword(password: String, onVerified: () -> Unit) {
-        val username = userIdentityStore.readUsername().orEmpty()
-        if (username.isBlank()) {
-            showToast(R.string.settings_user_id_unavailable)
-            return
-        }
-        execute(
-            request = { api.auth.signIn(SignInRequest(username, password)) },
-            onSuccess = onVerified,
         )
     }
 

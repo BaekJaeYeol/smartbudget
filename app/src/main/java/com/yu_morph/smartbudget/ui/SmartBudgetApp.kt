@@ -121,7 +121,6 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                         onLanguageSelected = settingsCoordinator::setLanguage,
                         onNotificationChanged = settingsCoordinator::setNotification,
                         onDisplayModeChanged = settingsCoordinator::setDisplayMode,
-                        onVerifyWithdrawal = settingsCoordinator::verifyWithdrawalPassword,
                         onDeleteAccount = {
                             settingsCoordinator.deleteAccount {
                                 openSettings = null
