@@ -7,6 +7,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,10 +42,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -383,7 +388,7 @@ private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(8.dp),
+                .padding(top = 8.dp, start = 24.dp, end = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
@@ -413,6 +418,7 @@ private fun SettingsSection(title: String, content: @Composable ColumnScope.() -
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
         content()
     }
 }
@@ -434,8 +440,17 @@ private fun SelectionRow(
     onClick: () -> Unit,
     leadingContent: (@Composable () -> Unit)? = null,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(onClick = onClick).padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         leadingContent?.let {
@@ -443,11 +458,16 @@ private fun SelectionRow(
             androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
         }
         Text(title, modifier = Modifier.weight(1f), fontSize = 16.sp)
-        if (selected) {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier.size(24.dp).background(SmartBudgetGreen, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
+        androidx.compose.foundation.layout.Box(
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .indication(interactionSource, ripple(bounded = true, radius = 18.dp))
+                    .background(if (selected) SmartBudgetGreen else Color.Transparent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) {
                 Icon(
                     Icons.Rounded.Check,
                     contentDescription = null,
@@ -461,19 +481,24 @@ private fun SelectionRow(
 
 @Composable
 private fun SwitchRow(label: Int, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 44.dp)
-                .clickable { onCheckedChange(!checked) }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = { onCheckedChange(!checked) },
+                )
                 .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(label), modifier = Modifier.weight(1f), fontSize = 16.sp)
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             modifier = Modifier.graphicsLayer(scaleX = 0.82f, scaleY = 0.82f),
         )
     }
