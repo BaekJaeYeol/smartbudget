@@ -43,9 +43,9 @@ import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 
-private val SettingsGradientGray = Color(0xFFF0F1F3)
-private val SettingsGradientLightGray = Color(0xFFF8F8F7)
-private val SettingsGradientGreen = Color(0xFFF0F8F4)
+private val SettingsGradientStart = Color(0xFFF1F1F1)
+private val SettingsGradientCenter = Color(0xFFF7F7F7)
+private val SettingsGradientEnd = Color(0xFFEFEFEF)
 private val SettingsPrimaryText = Color(0xFF404247)
 private val SettingsSecondaryText = Color(0xFF8A8D92)
 private val SettingsChevronColor = Color(0xFFB3B7BC)
@@ -111,7 +111,7 @@ internal fun SettingsScreen(
                                 MaterialTheme.colorScheme.background,
                             )
                         } else {
-                            listOf(SettingsGradientGray, SettingsGradientLightGray, SettingsGradientGreen)
+                            listOf(SettingsGradientStart, SettingsGradientCenter, SettingsGradientEnd)
                         },
                     ),
                 ).verticalScroll(rememberScrollState())

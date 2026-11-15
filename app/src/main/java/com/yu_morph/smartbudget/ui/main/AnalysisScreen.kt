@@ -59,7 +59,7 @@ internal fun AnalysisScreen(bottomPadding: Dp) {
 
 @Composable
 private fun AnalysisInsightCard() {
-    AnalysisCard(containerColor = SmartBudgetGreen.copy(alpha = 0.1f)) {
+    AnalysisCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(40.dp).background(SmartBudgetGreen, CircleShape),
