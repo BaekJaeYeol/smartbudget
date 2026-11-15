@@ -95,10 +95,10 @@
     <string name="settings_name_section">Name</string>
     <string name="settings_basic_information">Basic information</string>
     <string name="settings_profile_image">Profile image</string>
-    <string name="settings_value_unavailable">Not available</string>
     <string name="settings_edit_display_name">Edit display name</string>
     <string name="settings_password_dialog_message">Confirm your current password, then enter a new password.</string>
-    <string name="settings_current_budget_value">Monthly budget ₩%1$s</string>
+    <string name="settings_current_budget_value">This month’s budget ₩%1$s</string>
+    <string name="settings_budget_history_unavailable">No history</string>
     <string name="settings_edit_budget">Edit monthly budget</string>
     <string name="settings_budget_adjust_decrease">-₩%1$d0K</string>
     <string name="settings_budget_adjust_increase">+₩%1$d0K</string>

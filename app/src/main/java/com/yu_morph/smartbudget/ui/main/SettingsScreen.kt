@@ -12,19 +12,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,8 +46,8 @@ private val SettingsGradientEnd = Color(0xFFEFEFEF)
 private val SettingsPrimaryText = Color(0xFF404247)
 private val SettingsSecondaryText = Color(0xFF8A8D92)
 private val SettingsChevronColor = Color(0xFFB3B7BC)
-private val SettingsAvatarBackground = Color(0xFFE2E5E9)
-private val SettingsAvatarForeground = Color(0xFFB8BEC7)
+internal val SettingsAvatarBackground = Color(0xFFE2E5E9)
+internal val SettingsAvatarForeground = Color(0xFFB8BEC7)
 
 private data class SettingsEntry(@param:StringRes val label: Int, @param:StringRes val value: Int? = null)
 
@@ -120,6 +117,7 @@ internal fun SettingsScreen(
         ProfileHeader(
             displayName = state.displayName.ifBlank { stringResource(R.string.settings_profile_default_name) },
             userId = state.userId,
+            profileImageUri = state.profileImageUri,
             onLogout = onLogout,
         )
         SettingsGroups.forEach { group ->
@@ -152,23 +150,12 @@ internal fun SettingsScreen(
 }
 
 @Composable
-private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> Unit) {
+private fun ProfileHeader(displayName: String, userId: String, profileImageUri: String?, onLogout: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 20.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            modifier = Modifier.size(50.dp),
-            shape = CircleShape,
-            color = SettingsAvatarBackground,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Person,
-                contentDescription = null,
-                modifier = Modifier.padding(17.dp),
-                tint = SettingsAvatarForeground,
-            )
-        }
+        ProfileImage(imageUri = profileImageUri, size = 50.dp)
         Column(
             modifier = Modifier.padding(start = 12.dp).weight(1f),
         ) {

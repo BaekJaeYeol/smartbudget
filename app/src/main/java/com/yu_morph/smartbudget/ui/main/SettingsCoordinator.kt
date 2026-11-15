@@ -23,7 +23,7 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private const val BUDGET_HISTORY_MONTHS = 3L
+private const val BUDGET_HISTORY_MONTHS = 3
 private const val TRANSACTION_PAGE_LIMIT = 100
 private const val BANK_SYNC_START_DATE = "2025-01-01"
 private const val BANK_SYNC_END_DATE = "2026-12-31"
@@ -120,17 +120,8 @@ class SettingsCoordinator(
                         return@launch
                     }
                 }
-                state = state.copy(displayName = displayName, budgetAmount = budgetAmount)
-                if (passwordChanged) {
-                    userIdentityStore.clear()
-                    showToast(R.string.settings_password_updated)
-                } else if (profileChanged && budgetChanged) {
-                    showToast(R.string.settings_account_settings_saved)
-                } else if (profileChanged) {
-                    showToast(R.string.settings_profile_updated)
-                } else {
-                    showToast(R.string.settings_budget_saved)
-                }
+                updateSavedAccountState(displayName, budgetAmount, budgetChanged)
+                showAccountSaveResult(passwordChanged, profileChanged, budgetChanged)
                 onSuccess(passwordChanged)
             } catch (_: Exception) {
                 showToast(R.string.unknown_error)
@@ -143,6 +134,37 @@ class SettingsCoordinator(
     fun updateProfileImage(uri: String) {
         profileImageStore.writeUri(uri)
         state = state.copy(profileImageUri = uri)
+    }
+
+    private fun updateSavedAccountState(displayName: String, budgetAmount: Int, budgetChanged: Boolean) {
+        val currentMonth = YearMonth.now()
+        val budgetHistory =
+            if (budgetChanged) {
+                (
+                    state.budgetHistory.filterNot { it.month == currentMonth } +
+                        BudgetHistoryItem(currentMonth, budgetAmount)
+                    ).sortedBy(BudgetHistoryItem::month)
+            } else {
+                state.budgetHistory
+            }
+        state = state.copy(displayName = displayName, budgetAmount = budgetAmount, budgetHistory = budgetHistory)
+    }
+
+    private fun showAccountSaveResult(passwordChanged: Boolean, profileChanged: Boolean, budgetChanged: Boolean) {
+        val message =
+            when {
+                passwordChanged -> {
+                    userIdentityStore.clear()
+                    R.string.settings_password_updated
+                }
+
+                profileChanged && budgetChanged -> R.string.settings_account_settings_saved
+
+                profileChanged -> R.string.settings_profile_updated
+
+                else -> R.string.settings_budget_saved
+            }
+        showToast(message)
     }
 
     fun deleteAccount(onSuccess: () -> Unit) {
@@ -185,8 +207,9 @@ class SettingsCoordinator(
                     }
                 }
                 val history = mutableListOf<BudgetHistoryItem>()
-                for (offset in 1..BUDGET_HISTORY_MONTHS) {
-                    val month = currentMonth.minusMonths(offset)
+                history += BudgetHistoryItem(currentMonth, currentAmount)
+                for (offset in 1 until BUDGET_HISTORY_MONTHS) {
+                    val month = currentMonth.minusMonths(offset.toLong())
                     when (val result = api.monthlyBudgets.get(month.toString())) {
                         is ApiResult.Success -> result.data?.amount?.let { history += BudgetHistoryItem(month, it) }
 
@@ -196,7 +219,8 @@ class SettingsCoordinator(
                         }
                     }
                 }
-                state = state.copy(budgetAmount = currentAmount, budgetHistory = history)
+                state =
+                    state.copy(budgetAmount = currentAmount, budgetHistory = history.sortedBy(BudgetHistoryItem::month))
             } catch (_: Exception) {
                 showToast(R.string.unknown_error)
             } finally {

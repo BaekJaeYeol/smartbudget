@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,6 +77,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blongho.country_data.World
@@ -87,6 +90,7 @@ import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
+import java.time.YearMonth
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -215,8 +219,16 @@ private fun AccountSettings(
                     onClick = { imagePicker.launch(arrayOf("image/*")) },
                 )
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    AccountInfoLine(stringResource(R.string.username_label), state.userId)
-                    AccountInfoLine(stringResource(R.string.display_name_hint), state.displayName)
+                    Text(
+                        text = state.displayName.ifBlank { stringResource(R.string.settings_profile_default_name) },
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = state.userId.ifBlank { stringResource(R.string.settings_user_id_unavailable) },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                    )
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -234,6 +246,34 @@ private fun AccountSettings(
             }
         }
         SettingsSection(title = stringResource(R.string.settings_monthly_budget_section)) {
+            val historyByMonth = state.budgetHistory.associateBy(BudgetHistoryItem::month)
+            val historyMonths = (2 downTo 0).map { YearMonth.now().minusMonths(it.toLong()) }
+            val historyBackground = if (isSystemInDarkTheme()) Color(0xFF292929) else Color(0xFFF4F4F4)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                historyMonths.forEach { month ->
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        color = historyBackground,
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(month.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(
+                                text =
+                                    historyByMonth[month]?.let { formatCompactBudget(it.amount) }
+                                        ?: stringResource(R.string.settings_budget_history_unavailable),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(
@@ -241,8 +281,8 @@ private fun AccountSettings(
                         NumberFormat.getNumberInstance(Locale.KOREA).format(state.budgetAmount),
                     ),
                     modifier = Modifier.weight(1f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
                 )
                 IconButton(
                     onClick = {
@@ -251,31 +291,6 @@ private fun AccountSettings(
                     },
                 ) {
                     Icon(Icons.Outlined.Edit, stringResource(R.string.settings_edit_budget))
-                }
-            }
-            Text(
-                text = stringResource(R.string.settings_budget_history_tab),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            if (state.budgetHistory.isEmpty()) {
-                Text(
-                    stringResource(R.string.settings_budget_history_empty),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    state.budgetHistory.take(3).forEach { item ->
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(item.month.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(formatCompactBudget(item.amount), fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                    repeat(3 - state.budgetHistory.take(3).size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
@@ -321,7 +336,7 @@ private fun AccountSettings(
 private enum class AccountEditDialog { DISPLAY_NAME, PASSWORD, BUDGET }
 
 @Composable
-private fun ProfileImage(imageUri: String?, onClick: () -> Unit) {
+internal fun ProfileImage(imageUri: String?, size: Dp = 72.dp, onClick: (() -> Unit)? = null) {
     val context = LocalContext.current
     val bitmap by produceState<ImageBitmap?>(initialValue = null, imageUri) {
         value =
@@ -338,10 +353,10 @@ private fun ProfileImage(imageUri: String?, onClick: () -> Unit) {
     Box(
         modifier =
             Modifier
-                .size(72.dp)
+                .size(size)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable(onClick = onClick),
+                .background(SettingsAvatarBackground)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (bitmap != null) {
@@ -355,21 +370,10 @@ private fun ProfileImage(imageUri: String?, onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Outlined.Person,
                 contentDescription = stringResource(R.string.settings_profile_image),
-                modifier = Modifier.size(34.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(size * 0.48f),
+                tint = SettingsAvatarForeground,
             )
         }
-    }
-}
-
-@Composable
-private fun AccountInfoLine(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-        Text(
-            value.ifBlank { stringResource(R.string.settings_value_unavailable) },
-            fontWeight = FontWeight.Medium,
-        )
     }
 }
 
@@ -745,7 +749,7 @@ private fun SelectionRow(
     ) {
         leadingContent?.let {
             it()
-            androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+            Spacer(Modifier.size(12.dp))
         }
         Text(title, modifier = Modifier.weight(1f), fontSize = 16.sp)
         androidx.compose.foundation.layout.Box(
