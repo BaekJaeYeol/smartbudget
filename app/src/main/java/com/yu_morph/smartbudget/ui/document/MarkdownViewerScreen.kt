@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
@@ -44,8 +45,8 @@ import com.yu_morph.smartbudget.ui.main.mainScreenBackgroundBrush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val LightTableHeaderBackground = Color(0xFFE5E5E5)
-private val DarkTableHeaderBackground = Color(0xFF363636)
+private val LightTableHeaderBackground = Color(0xFFEEEEEE)
+private val DarkTableHeaderBackground = Color(0xFF343434)
 
 private sealed interface MarkdownBlock {
     data class Heading(val level: Int, val text: String) : MarkdownBlock
@@ -100,12 +101,18 @@ internal fun MarkdownViewerScreen(document: MarkdownDocument, onBack: () -> Unit
             )
         },
     ) { innerPadding ->
+        val documentBackground =
+            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+                mainScreenBackgroundBrush()
+            } else {
+                Brush.linearGradient(listOf(Color.White, Color.White))
+            }
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(mainScreenBackgroundBrush()),
+                    .background(documentBackground),
         ) {
             when {
                 loadFailed -> Text(
