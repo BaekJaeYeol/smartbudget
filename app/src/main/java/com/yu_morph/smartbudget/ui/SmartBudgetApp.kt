@@ -40,6 +40,8 @@ import java.time.YearMonth
 
 private enum class AppDestination { SPLASH, LOGIN, SIGN_UP, MAIN }
 
+private enum class AppContent { BASE, DOCUMENT, SETTINGS_DETAIL, BUDGET_BOOK_DETAIL }
+
 private const val MORPH_DURATION_MILLIS = 350
 private const val DETAIL_TRANSITION_DURATION_MILLIS = 260
 private const val DETAIL_SLIDE_DISTANCE_DIVISOR = 5
@@ -64,76 +66,75 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
     BackHandler(enabled = destination == AppDestination.SIGN_UP) {
         destination = AppDestination.LOGIN
     }
+    val appContent = when {
+        openDocument != null -> AppContent.DOCUMENT
+        openSettings != null -> AppContent.SETTINGS_DETAIL
+        openBudgetBookMonth != null -> AppContent.BUDGET_BOOK_DETAIL
+        else -> AppContent.BASE
+    }
     Box(modifier = Modifier.fillMaxSize()) {
-        AuthenticationContent(
-            destination = destination,
-            coordinator = coordinator,
-            settingsCoordinator = settingsCoordinator,
-            onDestinationChange = { destination = it },
-            onOpenDocument = { openDocument = it },
-            onOpenSettings = { openSettings = it },
-            onOpenBudgetBook = { openBudgetBookMonth = it.toString() },
-            onExit = onExit,
-        )
+        AnimatedContent(
+            targetState = appContent,
+            transitionSpec = { detailTransition(targetState != AppContent.BASE) },
+            label = "앱 상세 화면 전환",
+        ) { content ->
+            when (content) {
+                AppContent.BASE -> AuthenticationContent(
+                    destination = destination,
+                    coordinator = coordinator,
+                    settingsCoordinator = settingsCoordinator,
+                    onDestinationChange = { destination = it },
+                    onOpenDocument = { openDocument = it },
+                    onOpenSettings = { openSettings = it },
+                    onOpenBudgetBook = { openBudgetBookMonth = it.toString() },
+                    onExit = onExit,
+                )
+
+                AppContent.DOCUMENT -> openDocument?.let { document ->
+                    MarkdownViewerScreen(document = document, onBack = { openDocument = null })
+                }
+
+                AppContent.SETTINGS_DETAIL -> openSettings?.let { settings ->
+                    SettingsDetailScreen(
+                        destination = settings,
+                        state = settingsCoordinator.state,
+                        onBack = { openSettings = null },
+                        onUpdateDisplayName = { name ->
+                            settingsCoordinator.updateDisplayName(name) { openSettings = null }
+                        },
+                        onUpdatePassword = { current, new ->
+                            settingsCoordinator.updatePassword(current, new) {
+                                openSettings = null
+                                coordinator.signOut()
+                                destination = AppDestination.LOGIN
+                            }
+                        },
+                        onLoadBudget = settingsCoordinator::loadMonthlyBudget,
+                        onSaveBudget = settingsCoordinator::saveMonthlyBudget,
+                        onLanguageSelected = settingsCoordinator::setLanguage,
+                        onNotificationChanged = settingsCoordinator::setNotification,
+                        onDisplayModeChanged = settingsCoordinator::setDisplayMode,
+                        onVerifyWithdrawal = settingsCoordinator::verifyWithdrawalPassword,
+                        onDeleteAccount = {
+                            settingsCoordinator.deleteAccount {
+                                openSettings = null
+                                coordinator.signOut()
+                                destination = AppDestination.LOGIN
+                            }
+                        },
+                    )
+                }
+
+                AppContent.BUDGET_BOOK_DETAIL -> openBudgetBookMonth?.let { month ->
+                    BudgetBookDetailScreen(
+                        month = YearMonth.parse(month),
+                        onMonthChange = { changedMonth -> openBudgetBookMonth = changedMonth.toString() },
+                        onBack = { openBudgetBookMonth = null },
+                    )
+                }
+            }
+        }
         if (coordinator.isLoading) AuthLoadingDialog()
-        AnimatedContent(
-            targetState = openDocument,
-            transitionSpec = { detailTransition(targetState != null) },
-            label = "문서 화면 전환",
-        ) { document ->
-            document?.let {
-                MarkdownViewerScreen(document = it, onBack = { openDocument = null })
-            }
-        }
-        AnimatedContent(
-            targetState = openSettings,
-            transitionSpec = { detailTransition(targetState != null) },
-            label = "설정 상세 화면 전환",
-        ) { settings ->
-            settings?.let {
-                SettingsDetailScreen(
-                    destination = it,
-                    state = settingsCoordinator.state,
-                    onBack = { openSettings = null },
-                    onUpdateDisplayName = { name ->
-                        settingsCoordinator.updateDisplayName(name) { openSettings = null }
-                    },
-                    onUpdatePassword = { current, new ->
-                        settingsCoordinator.updatePassword(current, new) {
-                            openSettings = null
-                            coordinator.signOut()
-                            destination = AppDestination.LOGIN
-                        }
-                    },
-                    onLoadBudget = settingsCoordinator::loadMonthlyBudget,
-                    onSaveBudget = settingsCoordinator::saveMonthlyBudget,
-                    onLanguageSelected = settingsCoordinator::setLanguage,
-                    onNotificationChanged = settingsCoordinator::setNotification,
-                    onDisplayModeChanged = settingsCoordinator::setDisplayMode,
-                    onVerifyWithdrawal = settingsCoordinator::verifyWithdrawalPassword,
-                    onDeleteAccount = {
-                        settingsCoordinator.deleteAccount {
-                            openSettings = null
-                            coordinator.signOut()
-                            destination = AppDestination.LOGIN
-                        }
-                    },
-                )
-            }
-        }
-        AnimatedContent(
-            targetState = openBudgetBookMonth,
-            transitionSpec = { detailTransition(targetState != null) },
-            label = "가계부 상세 화면 전환",
-        ) { month ->
-            month?.let {
-                BudgetBookDetailScreen(
-                    month = YearMonth.parse(it),
-                    onMonthChange = { changedMonth -> openBudgetBookMonth = changedMonth.toString() },
-                    onBack = { openBudgetBookMonth = null },
-                )
-            }
-        }
         if (settingsCoordinator.state.isLoading) AuthLoadingDialog()
     }
 }
