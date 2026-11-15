@@ -7,6 +7,7 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
@@ -53,36 +54,66 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
+    @get:InputDirectory
+    abstract val licenseTextDirectory: DirectoryProperty
+
     @TaskAction
     fun generate() {
         outputDirectory.get().asFile.listFiles()?.forEach { it.deleteRecursively() }
         val outputFile = outputDirectory.file("open_source_licenses.md").get().asFile
         outputFile.parentFile.mkdirs()
         val entries = runtimeComponents.get().distinct().sorted()
+        val components = entries.map(::componentInfo)
+        val licenses = components.map { it.license }.distinctBy { it.id }
         outputFile.writeText(
             buildString {
                 appendLine("# 오픈소스 라이선스")
                 appendLine()
                 appendLine("SmartBudget 앱에 포함되는 런타임 오픈소스 소프트웨어 목록입니다.")
-                appendLine("빌드 및 테스트에만 사용되는 도구는 제외했습니다.")
                 appendLine()
-                entries.forEach { component ->
-                    val group = component.substringBefore(':')
-                    val license = licenseFor(group)
-                    appendLine("## $component")
+                appendLine("| 이름 | 버전 | 라이선스 | 저작권자 |")
+                appendLine("| --- | --- | --- | --- |")
+                components.forEach { component ->
+                    appendLine(
+                        "| ${component.name} | ${component.version} | " +
+                            "${component.license.name} | ${component.copyrightOwner} |",
+                    )
+                }
+                appendLine()
+                appendLine("# 라이선스 본문")
+                appendLine()
+                licenses.forEach { license ->
+                    appendLine("## ${license.name}")
                     appendLine()
-                    appendLine("- 라이선스: ${license.name}")
-                    appendLine("- 라이선스 전문: ${license.url}")
+                    appendLine(
+                        licenseTextDirectory
+                            .file(license.textFileName)
+                            .get()
+                            .asFile
+                            .readText()
+                            .trim(),
+                    )
                     appendLine()
                 }
             },
         )
     }
 
-    private fun licenseFor(group: String): License = when {
-        group == "com.kizitonwose.calendar" -> License("MIT License", "https://opensource.org/license/mit")
+    private fun componentInfo(component: String): ComponentInfo {
+        val parts = component.split(':', limit = 3)
+        val group = parts[0]
+        return ComponentInfo(
+            name = "${parts[0]}:${parts[1]}",
+            version = parts[2],
+            license = licenseFor(group),
+            copyrightOwner = copyrightOwnerFor(group),
+        )
+    }
 
-        group == "org.slf4j" -> License("MIT License", "https://www.slf4j.org/license.html")
+    private fun licenseFor(group: String): License = when {
+        group == "com.kizitonwose.calendar" -> License("mit", "MIT License", "mit.txt")
+
+        group == "org.slf4j" -> License("mit", "MIT License", "mit.txt")
 
         group.startsWith("androidx.") ||
             group == "com.google.code.gson" ||
@@ -93,12 +124,30 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
             group == "org.jetbrains.kotlin" ||
             group == "org.jetbrains.kotlinx" ||
             group == "org.jspecify" ->
-            License("Apache License 2.0", "https://www.apache.org/licenses/LICENSE-2.0")
+            License("apache-2.0", "Apache License 2.0", "apache-2.0.txt")
 
         else -> error("라이선스 정보가 등록되지 않은 런타임 종속성 그룹입니다: $group")
     }
 
-    private data class License(val name: String, val url: String)
+    private fun copyrightOwnerFor(group: String): String = when {
+        group.startsWith("androidx.") -> "The Android Open Source Project"
+        group.startsWith("com.google.") -> "Google LLC"
+        group == "com.kizitonwose.calendar" -> "Kizito Nwose 및 기여자"
+        group == "io.ktor" -> "JetBrains s.r.o. 및 기여자"
+        group == "org.jetbrains" || group.startsWith("org.jetbrains.") -> "JetBrains s.r.o. 및 기여자"
+        group == "org.jspecify" -> "JSpecify 기여자"
+        group == "org.slf4j" -> "QOS.ch 및 SLF4J 기여자"
+        else -> error("저작권자 정보가 등록되지 않은 런타임 종속성 그룹입니다: $group")
+    }
+
+    private data class ComponentInfo(
+        val name: String,
+        val version: String,
+        val license: License,
+        val copyrightOwner: String,
+    )
+
+    private data class License(val id: String, val name: String, val textFileName: String)
 }
 
 val appVersionName = providers.gradleProperty("appVersionName").orElse("1.0")
@@ -129,6 +178,7 @@ val generateOpenSourceLicenses =
                     }
             },
         )
+        licenseTextDirectory.set(rootProject.layout.projectDirectory.dir("config/licenses"))
         outputDirectory.set(layout.buildDirectory.dir("generated/assets/openSourceLicenses"))
     }
 

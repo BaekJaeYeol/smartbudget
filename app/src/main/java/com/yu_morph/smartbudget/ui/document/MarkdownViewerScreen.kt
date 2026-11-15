@@ -2,6 +2,7 @@ package com.yu_morph.smartbudget.ui.document
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -46,6 +49,8 @@ private sealed interface MarkdownBlock {
     data class Paragraph(val text: String) : MarkdownBlock
 
     data class Bullet(val text: String) : MarkdownBlock
+
+    data class Table(val headers: List<String>, val rows: List<List<String>>) : MarkdownBlock
 
     data object Divider : MarkdownBlock
 }
@@ -135,8 +140,42 @@ private fun MarkdownContent(markdown: String, modifier: Modifier = Modifier) {
                     Text(cleanInlineMarkdown(block.text), fontSize = 15.sp, lineHeight = 23.sp)
                 }
 
+                is MarkdownBlock.Table -> MarkdownTable(block)
+
                 MarkdownBlock.Divider -> HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownTable(table: MarkdownBlock.Table) {
+    Column(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        MarkdownTableRow(cells = table.headers, isHeader = true)
+        table.rows.forEach { row ->
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            MarkdownTableRow(cells = row, isHeader = false)
+        }
+    }
+}
+
+@Composable
+private fun MarkdownTableRow(cells: List<String>, isHeader: Boolean) {
+    val widths = listOf(240.dp, 90.dp, 160.dp, 220.dp)
+    Row(
+        modifier =
+            Modifier.background(
+                if (isHeader) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
+            ),
+    ) {
+        cells.forEachIndexed { index, cell ->
+            Text(
+                text = cleanInlineMarkdown(cell),
+                modifier = Modifier.width(widths.getOrElse(index) { 180.dp }).padding(12.dp),
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
+                fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            )
         }
     }
 }
@@ -158,8 +197,11 @@ private fun MarkdownHeading(block: MarkdownBlock.Heading) {
     )
 }
 
+@Suppress("CyclomaticComplexMethod")
 private fun parseMarkdown(markdown: String): List<MarkdownBlock> = buildList {
     val paragraph = mutableListOf<String>()
+    val lines = markdown.lines()
+    var index = 0
 
     fun flushParagraph() {
         if (paragraph.isNotEmpty()) {
@@ -168,10 +210,23 @@ private fun parseMarkdown(markdown: String): List<MarkdownBlock> = buildList {
         }
     }
 
-    markdown.lineSequence().forEach { rawLine ->
-        val line = rawLine.trim()
+    while (index < lines.size) {
+        val line = lines[index].trim()
         when {
             line.isEmpty() -> flushParagraph()
+
+            line.startsWith("|") && index + 1 < lines.size && isTableSeparator(lines[index + 1]) -> {
+                flushParagraph()
+                val headers = parseTableCells(line)
+                val rows = mutableListOf<List<String>>()
+                index += 2
+                while (index < lines.size && lines[index].trim().startsWith("|")) {
+                    rows += parseTableCells(lines[index])
+                    index++
+                }
+                add(MarkdownBlock.Table(headers, rows))
+                continue
+            }
 
             line == "---" || line == "***" -> {
                 flushParagraph()
@@ -191,9 +246,18 @@ private fun parseMarkdown(markdown: String): List<MarkdownBlock> = buildList {
 
             else -> paragraph += line
         }
+        index++
     }
     flushParagraph()
 }
+
+private fun isTableSeparator(line: String): Boolean {
+    val cells = parseTableCells(line)
+    return cells.isNotEmpty() && cells.all { it.replace(":", "").matches(Regex("-{3,}")) }
+}
+
+private fun parseTableCells(line: String): List<String> =
+    line.trim().removePrefix("|").removeSuffix("|").split('|').map(String::trim)
 
 private fun cleanInlineMarkdown(text: String): String = text
     .replace(Regex("\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
