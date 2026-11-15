@@ -2,6 +2,8 @@
 
 package com.yu_morph.smartbudget.ui.main
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -35,31 +37,41 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.caverock.androidsvg.SVG
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 
-private data class BankOption(val key: String, @param:StringRes val nameResource: Int, val color: Color)
+private data class BankOption(
+    val key: String,
+    @param:StringRes val nameResource: Int,
+    val logoAssetName: String,
+    val logoWidth: Int,
+    val logoHeight: Int,
+)
 
 private val BankOptions =
     listOf(
-        BankOption("kb", R.string.bank_kb, Color(0xFFFFB800)),
-        BankOption("shinhan", R.string.bank_shinhan, Color(0xFF2565B7)),
-        BankOption("hana", R.string.bank_hana, Color(0xFF008B80)),
-        BankOption("woori", R.string.bank_woori, Color(0xFF1688D4)),
-        BankOption("nh", R.string.bank_nh, Color(0xFF19A164)),
-        BankOption("ibk", R.string.bank_ibk, Color(0xFF2171B9)),
-        BankOption("kakao", R.string.bank_kakao, Color(0xFFFFC928)),
-        BankOption("toss", R.string.bank_toss, Color(0xFF316FEE)),
-        BankOption("kbank", R.string.bank_kbank, Color(0xFF6B49D8)),
-        BankOption("busan", R.string.bank_busan, Color(0xFFD52836)),
-        BankOption("sc", R.string.bank_sc, Color(0xFF218C74)),
-        BankOption("suhyup", R.string.bank_suhyup, Color(0xFF1672B8)),
+        BankOption("kb", R.string.bank_kb, "KB국민은행 심볼.svg", 30, 24),
+        BankOption("shinhan", R.string.bank_shinhan, "신한은행 심볼.svg", 28, 28),
+        BankOption("hana", R.string.bank_hana, "하나은행 심볼.svg", 27, 28),
+        BankOption("woori", R.string.bank_woori, "우리은행 심볼.svg", 28, 28),
+        BankOption("nh", R.string.bank_nh, "NH농협은행 심볼.svg", 23, 29),
+        BankOption("ibk", R.string.bank_ibk, "IBK기업은행 심볼.svg", 28, 28),
+        BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
+        BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 27),
+        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 14),
+        BankOption("busan", R.string.bank_busan, "BNK부산은행 심볼.svg", 32, 12),
+        BankOption("sc", R.string.bank_sc, "SC제일은행 심볼.svg", 19, 30),
+        BankOption("suhyup", R.string.bank_suhyup, "수협은행 심볼.svg", 30, 22),
     )
 
 @Composable
@@ -131,15 +143,11 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier.size(34.dp).background(bank.color, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_bank_logo),
+            Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                SvgAssetImage(
+                    assetName = bank.logoAssetName,
                     contentDescription = stringResource(R.string.settings_bank_logo, stringResource(bank.nameResource)),
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(bank.logoWidth.dp, bank.logoHeight.dp),
                 )
             }
             Text(
@@ -152,6 +160,27 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun SvgAssetImage(assetName: String, contentDescription: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val image = remember(assetName) {
+        context.assets.open(assetName).use { input ->
+            val picture = SVG.getFromInputStream(input).renderToPicture(SVG_RENDER_SIZE, SVG_RENDER_SIZE)
+            Bitmap.createBitmap(SVG_RENDER_SIZE, SVG_RENDER_SIZE, Bitmap.Config.ARGB_8888).also { bitmap ->
+                Canvas(bitmap).drawPicture(picture)
+            }.asImageBitmap()
+        }
+    }
+    Image(
+        bitmap = image,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+    )
+}
+
+private const val SVG_RENDER_SIZE = 256
 
 @Composable
 private fun SelectionCheck(selected: Boolean) {
