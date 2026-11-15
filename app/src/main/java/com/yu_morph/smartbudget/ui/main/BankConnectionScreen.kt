@@ -81,7 +81,7 @@ private val BankOptions =
         BankOption("gwangju", R.string.bank_gwangju, "광주은행 심볼.svg", 28, 28),
         BankOption("jeonbuk", R.string.bank_jeonbuk, "전북은행 심볼.svg", 28, 28),
         BankOption("jeju", R.string.bank_jeju, "제주은행 심볼.svg", 28, 28),
-        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12, logoScale = 2f),
+        BankOption("kbank", R.string.bank_kbank, "케이뱅크 심볼.svg", 32, 12, logoScale = 3f),
         BankOption("kakao", R.string.bank_kakao, "카카오뱅크 심볼.svg", 28, 28),
         BankOption("toss", R.string.bank_toss, "토스뱅크 심볼.svg", 28, 26),
         BankOption("suhyup", R.string.bank_suhyup, "수협은행 심볼.svg", 30, 22),
@@ -166,17 +166,21 @@ private fun BankSelectionHeader(selectedAll: Boolean, onToggleAll: () -> Unit) {
 private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     Card(
-        modifier = Modifier.fillMaxWidth().height(100.dp).clip(shape).clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().height(80.dp).clip(shape).clickable(onClick = onClick),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(2.dp, if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outlineVariant),
+        border =
+            BorderStroke(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) SmartBudgetGreen else MaterialTheme.colorScheme.outlineVariant,
+            ),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 0.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
                 SvgAssetImage(
                     assetName = bank.logoAssetName,
                     contentDescription = stringResource(R.string.settings_bank_logo, stringResource(bank.nameResource)),
@@ -190,8 +194,8 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
             }
             Text(
                 text = stringResource(bank.nameResource),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                fontSize = 12.sp,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
