@@ -41,8 +41,8 @@ import java.time.YearMonth
 private enum class AppDestination { SPLASH, LOGIN, SIGN_UP, MAIN }
 
 private const val MORPH_DURATION_MILLIS = 350
-private const val DETAIL_TRANSITION_DURATION_MILLIS = 280
-private const val BACKGROUND_PARALLAX_DIVISOR = 4
+private const val DETAIL_TRANSITION_DURATION_MILLIS = 260
+private const val DETAIL_SLIDE_DISTANCE_DIVISOR = 5
 
 @Composable
 @Suppress("LongMethod")
@@ -138,25 +138,21 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
     }
 }
 
-private fun <S> androidx.compose.animation.AnimatedContentTransitionScope<S>.detailTransition(opening: Boolean) =
-    if (opening) {
+private fun <S> androidx.compose.animation.AnimatedContentTransitionScope<S>.detailTransition(opening: Boolean) = run {
+    val direction = if (opening) 1 else -1
+    (
+        slideInHorizontally(tween(DETAIL_TRANSITION_DURATION_MILLIS)) {
+            it * direction / DETAIL_SLIDE_DISTANCE_DIVISOR
+        } +
+            fadeIn(tween(DETAIL_TRANSITION_DURATION_MILLIS))
+        ) togetherWith
         (
-            slideInHorizontally(tween(DETAIL_TRANSITION_DURATION_MILLIS)) { it } +
-                fadeIn(tween(DETAIL_TRANSITION_DURATION_MILLIS))
-            ) togetherWith
-            (
-                slideOutHorizontally(tween(DETAIL_TRANSITION_DURATION_MILLIS)) {
-                    -it / BACKGROUND_PARALLAX_DIVISOR
-                } +
-                    fadeOut(tween(DETAIL_TRANSITION_DURATION_MILLIS))
-                )
-    } else {
-        fadeIn(tween(DETAIL_TRANSITION_DURATION_MILLIS)) togetherWith
-            (
-                slideOutHorizontally(tween(DETAIL_TRANSITION_DURATION_MILLIS)) { it } +
-                    fadeOut(tween(DETAIL_TRANSITION_DURATION_MILLIS))
-                )
-    }
+            slideOutHorizontally(tween(DETAIL_TRANSITION_DURATION_MILLIS)) {
+                -it * direction / DETAIL_SLIDE_DISTANCE_DIVISOR
+            } +
+                fadeOut(tween(DETAIL_TRANSITION_DURATION_MILLIS))
+            )
+}
 
 @Composable
 private fun AuthenticationContent(
