@@ -49,6 +49,7 @@ import com.caverock.androidsvg.SVG
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
+import kotlin.math.min
 
 private data class BankOption(
     val key: String,
@@ -183,9 +184,19 @@ private fun SvgAssetImage(
         context.assets.open(assetName).use { input ->
             val bitmapWidth = renderWidth * SVG_RENDER_SCALE
             val bitmapHeight = renderHeight * SVG_RENDER_SCALE
-            val picture = SVG.getFromInputStream(input).renderToPicture(bitmapWidth, bitmapHeight)
+            val picture = SVG.getFromInputStream(input).renderToPicture()
             Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888).also { bitmap ->
-                Canvas(bitmap).drawPicture(picture)
+                val canvas = Canvas(bitmap)
+                val scale =
+                    min(
+                        bitmapWidth.toFloat() / picture.width,
+                        bitmapHeight.toFloat() / picture.height,
+                    )
+                val horizontalOffset = (bitmapWidth - picture.width * scale) / 2f
+                val verticalOffset = (bitmapHeight - picture.height * scale) / 2f
+                canvas.translate(horizontalOffset, verticalOffset)
+                canvas.scale(scale, scale)
+                canvas.drawPicture(picture)
             }.asImageBitmap()
         }
     }
