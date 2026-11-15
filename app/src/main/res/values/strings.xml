@@ -100,6 +100,7 @@
     <string name="settings_profile_updated">표시 이름을 변경했습니다.</string>
     <string name="settings_password_updated">비밀번호를 변경했습니다. 다시 로그인해 주세요.</string>
     <string name="settings_password_incorrect">비밀번호가 올바르지 않습니다.</string>
+    <string name="settings_profile_invalid_input">이름과 비밀번호 입력 형식을 확인해 주세요.</string>
     <string name="settings_current_month_budget">이번 달 예산</string>
     <string name="settings_budget_setup_tab">예산 설정</string>
     <string name="settings_budget_history_tab">변경 이력</string>
@@ -108,6 +109,7 @@
     <string name="settings_budget_quick_amount">%1$d만</string>
     <string name="settings_save_budget">예산 저장</string>
     <string name="settings_budget_saved">이번 달 예산을 저장했습니다.</string>
+    <string name="settings_budget_invalid_input">예산은 0원 이상 1,000만원 이하로 입력해 주세요.</string>
     <string name="settings_budget_history">과거 예산 변경 이력</string>
     <string name="settings_budget_history_empty">저장된 과거 예산이 없습니다.</string>
     <string name="settings_budget_history_amount">%1$s원</string>

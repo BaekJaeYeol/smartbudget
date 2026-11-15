@@ -2,6 +2,7 @@
 
 package com.yu_morph.smartbudget.ui.main
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -56,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -185,6 +187,7 @@ private fun ProfileSettings(
     onSave: (String, String, String) -> Unit,
     onSaveActionChanged: (SettingsSaveAction) -> Unit,
 ) {
+    val context = LocalContext.current
     var displayName by rememberSaveable(state.displayName) { mutableStateOf(state.displayName) }
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
@@ -194,13 +197,18 @@ private fun ProfileSettings(
         currentPassword.isNotBlank() &&
             SignUpValidation.isValidPassword(newPassword) &&
             newPassword == passwordConfirmation
+    val hasChanges = displayName.trim() != state.displayName || !passwordUnchanged
     val saveAction =
-        remember(displayName, currentPassword, newPassword, passwordConfirmation, onSave) {
+        remember(displayName, currentPassword, newPassword, passwordConfirmation, state.displayName, onSave) {
             SettingsSaveAction(
-                enabled =
-                    SignUpValidation.isValidDisplayName(displayName) &&
-                        (passwordUnchanged || passwordValid),
-                onSave = { onSave(displayName.trim(), currentPassword, newPassword) },
+                enabled = hasChanges,
+                onSave = {
+                    if (!SignUpValidation.isValidDisplayName(displayName) || (!passwordUnchanged && !passwordValid)) {
+                        Toast.makeText(context, R.string.settings_profile_invalid_input, Toast.LENGTH_SHORT).show()
+                    } else {
+                        onSave(displayName.trim(), currentPassword, newPassword)
+                    }
+                },
             )
         }
     LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
@@ -238,13 +246,21 @@ private fun BudgetSettings(
     onSave: (Int) -> Unit,
     onSaveActionChanged: (SettingsSaveAction) -> Unit,
 ) {
+    val context = LocalContext.current
     var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
     val amount = amountText.toIntOrNull()
+    val hasChanges = amountText != state.budgetAmount.toString()
     val saveAction =
-        remember(amount, onSave) {
+        remember(amount, hasChanges, onSave) {
             SettingsSaveAction(
-                enabled = amount != null && amount in 0..10_000_000,
-                onSave = { amount?.let(onSave) },
+                enabled = hasChanges,
+                onSave = {
+                    if (amount == null || amount !in 0..10_000_000) {
+                        Toast.makeText(context, R.string.settings_budget_invalid_input, Toast.LENGTH_SHORT).show()
+                    } else {
+                        onSave(amount)
+                    }
+                },
             )
         }
     LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
