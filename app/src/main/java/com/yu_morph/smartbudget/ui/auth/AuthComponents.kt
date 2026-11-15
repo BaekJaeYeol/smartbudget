@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -29,16 +30,23 @@ internal fun AuthTextField(
     isPassword: Boolean = false,
     isError: Boolean = false,
     onDone: (() -> Unit)? = null,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    suffix: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
         placeholder = { Text(text = placeholder, fontSize = 13.sp) },
         textStyle = TextStyle(fontSize = 13.sp),
         singleLine = true,
         isError = isError,
-        keyboardOptions = KeyboardOptions(imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = if (isPassword) KeyboardType.Password else keyboardType,
+                imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default,
+            ),
         keyboardActions =
             KeyboardActions(
                 onDone = {
@@ -47,6 +55,7 @@ internal fun AuthTextField(
                 },
             ),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        suffix = suffix,
         shape = RoundedCornerShape(10.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = SmartBudgetGreen,
@@ -57,10 +66,15 @@ internal fun AuthTextField(
 }
 
 @Composable
-internal fun PrimaryAuthButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+internal fun PrimaryAuthButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         enabled = enabled,
         shape = RoundedCornerShape(9.dp),
         colors = ButtonDefaults.buttonColors(containerColor = SmartBudgetGreen),

@@ -12,21 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -38,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,11 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.local.DisplayMode
+import com.yu_morph.smartbudget.ui.auth.AuthTextField
+import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.auth.SignUpValidation
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -86,13 +79,7 @@ internal fun SettingsDetailScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(destination.titleResource()),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.navigate_back))
@@ -156,21 +143,19 @@ private fun ProfileSettings(
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_display_name_section)) {
-            OutlinedTextField(
+        SettingsSection(title = stringResource(R.string.settings_display_name_section)) {
+            AuthTextField(
                 value = displayName,
                 onValueChange = { displayName = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.display_name_hint)) },
-                singleLine = true,
+                placeholder = stringResource(R.string.display_name_hint),
             )
-            Button(
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_save_display_name),
                 onClick = { onUpdateDisplayName(displayName.trim()) },
-                modifier = Modifier.fillMaxWidth(),
                 enabled = SignUpValidation.isValidDisplayName(displayName),
-            ) { Text(stringResource(R.string.settings_save_display_name)) }
+            )
         }
-        SettingsCard(title = stringResource(R.string.settings_password_section)) {
+        SettingsSection(title = stringResource(R.string.settings_password_section)) {
             PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
             PasswordField(newPassword, { newPassword = it }, R.string.settings_new_password)
             PasswordField(passwordConfirmation, { passwordConfirmation = it }, R.string.password_confirm_hint)
@@ -179,14 +164,14 @@ private fun ProfileSettings(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
             )
-            Button(
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_change_password),
                 onClick = { onUpdatePassword(currentPassword, newPassword) },
-                modifier = Modifier.fillMaxWidth(),
                 enabled =
                     currentPassword.isNotBlank() &&
                         SignUpValidation.isValidPassword(newPassword) &&
                         newPassword == passwordConfirmation,
-            ) { Text(stringResource(R.string.settings_change_password)) }
+            )
         }
     }
 }
@@ -196,30 +181,30 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
     var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
     LaunchedEffect(Unit) { onLoad() }
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_current_month_budget)) {
-            OutlinedTextField(
+        SettingsSection(title = stringResource(R.string.settings_current_month_budget)) {
+            AuthTextField(
                 value = amountText,
                 onValueChange = { value -> amountText = value.filter(Char::isDigit).take(8) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.settings_budget_amount)) },
+                placeholder = stringResource(R.string.settings_budget_amount),
                 suffix = { Text(stringResource(R.string.settings_won)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
+                keyboardType = KeyboardType.Number,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(500_000, 1_000_000, 2_000_000).forEach { amount ->
-                    OutlinedButton(onClick = { amountText = amount.toString() }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.settings_budget_quick_amount, amount / 10_000))
-                    }
+                    PrimaryAuthButton(
+                        text = stringResource(R.string.settings_budget_quick_amount, amount / 10_000),
+                        onClick = { amountText = amount.toString() },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
-            Button(
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_save_budget),
                 onClick = { amountText.toIntOrNull()?.let(onSave) },
-                modifier = Modifier.fillMaxWidth(),
                 enabled = amountText.toIntOrNull() in 0..10_000_000,
-            ) { Text(stringResource(R.string.settings_save_budget)) }
+            )
         }
-        SettingsCard(title = stringResource(R.string.settings_budget_history)) {
+        SettingsSection(title = stringResource(R.string.settings_budget_history)) {
             if (state.budgetHistory.isEmpty()) {
                 Text(
                     stringResource(R.string.settings_budget_history_empty),
@@ -243,7 +228,7 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
 @Composable
 private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSelected: (String) -> Unit) {
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_available_languages)) {
+        SettingsSection(title = stringResource(R.string.settings_available_languages)) {
             SelectableRow(
                 title = stringResource(R.string.settings_korean),
                 subtitle = "🇰🇷",
@@ -261,7 +246,7 @@ private fun NotificationSettings(
     onChanged: (NotificationSetting, Boolean) -> Unit,
 ) {
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_notification_categories)) {
+        SettingsSection(title = stringResource(R.string.settings_notification_categories)) {
             SwitchRow(
                 R.string.settings_budget_approaching_notification,
                 state.appSettings.budgetApproachingNotification,
@@ -280,7 +265,7 @@ private fun NotificationSettings(
 @Composable
 private fun DisplaySettings(selectedMode: DisplayMode, modifier: Modifier, onSelected: (DisplayMode) -> Unit) {
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_theme)) {
+        SettingsSection(title = stringResource(R.string.settings_theme)) {
             DisplayMode.entries.forEach { mode ->
                 SelectableRow(
                     title = stringResource(mode.labelResource()),
@@ -301,17 +286,17 @@ private fun WithdrawalSettings(
     var password by rememberSaveable { mutableStateOf("") }
     var showConfirmation by rememberSaveable { mutableStateOf(false) }
     SettingsColumn(modifier) {
-        SettingsCard(title = stringResource(R.string.settings_withdraw)) {
+        SettingsSection(title = stringResource(R.string.settings_withdraw)) {
             Text(
                 stringResource(R.string.settings_withdraw_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             PasswordField(password, { password = it }, R.string.settings_current_password)
-            Button(
+            PrimaryAuthButton(
+                text = stringResource(R.string.settings_verify_password),
                 onClick = { onVerify(password) { showConfirmation = true } },
-                modifier = Modifier.fillMaxWidth(),
                 enabled = password.isNotBlank(),
-            ) { Text(stringResource(R.string.settings_verify_password)) }
+            )
         }
     }
     if (showConfirmation) {
@@ -344,32 +329,23 @@ private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.
 }
 
 @Composable
-private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(
+private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            content()
-        }
+        Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        content()
     }
 }
 
 @Composable
 private fun PasswordField(value: String, onValueChange: (String) -> Unit, label: Int) {
-    OutlinedTextField(
+    AuthTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(label)) },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        singleLine = true,
+        placeholder = stringResource(label),
+        isPassword = true,
     )
 }
 
@@ -402,15 +378,6 @@ private fun SettingValueRow(label: String, value: String) {
         Text(label, modifier = Modifier.weight(1f))
         Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-private fun SettingsDetailDestination.titleResource(): Int = when (this) {
-    SettingsDetailDestination.PROFILE -> R.string.settings_edit_profile
-    SettingsDetailDestination.MONTHLY_BUDGET -> R.string.settings_monthly_budget
-    SettingsDetailDestination.LANGUAGE -> R.string.settings_language
-    SettingsDetailDestination.NOTIFICATIONS -> R.string.settings_notifications
-    SettingsDetailDestination.DISPLAY -> R.string.settings_display
-    SettingsDetailDestination.WITHDRAWAL -> R.string.settings_withdraw
 }
 
 private fun DisplayMode.labelResource(): Int = when (this) {
