@@ -12,6 +12,7 @@ import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.data.local.PreferenceStoreFactory
 import com.yu_morph.smartbudget.data.remote.ApiResult
 import com.yu_morph.smartbudget.data.remote.SmartBudgetApi
+import com.yu_morph.smartbudget.data.remote.api.TransactionListQuery
 import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.ReplaceMonthlyBudgetRequest
 import com.yu_morph.smartbudget.data.remote.model.SignInRequest
@@ -19,10 +20,12 @@ import com.yu_morph.smartbudget.data.remote.model.TransactionSource
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
 import com.yu_morph.smartbudget.data.remote.model.UpdateAccountRequest
 import java.time.YearMonth
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private const val BUDGET_HISTORY_MONTHS = 12L
+private const val TRANSACTION_PAGE_LIMIT = 100
 
 data class BudgetHistoryItem(val month: YearMonth, val amount: Int)
 
@@ -197,6 +200,8 @@ class SettingsCoordinator(
                     showFailure(result)
                     return@launch
                 }
+                if (!deleteTransactionsForMonth(month)) return@launch
+                val syncSessionId = UUID.randomUUID().toString()
                 result.data.transactions.forEach { transaction ->
                     val createResult =
                         api.transactions.create(
@@ -214,7 +219,7 @@ class SettingsCoordinator(
                                     storeName = transaction.description,
                                     amount = transaction.amount,
                                 ),
-                            idempotencyKey = "bank-sync-${transaction.transactionId}",
+                            idempotencyKey = "bank-sync-$syncSessionId-${transaction.transactionId}",
                         )
                     if (createResult !is ApiResult.Success) {
                         showFailure(createResult)
@@ -233,6 +238,46 @@ class SettingsCoordinator(
                 state = state.copy(isBankSyncing = false)
             }
         }
+    }
+
+    private suspend fun deleteTransactionsForMonth(month: YearMonth): Boolean {
+        val transactionIds = loadTransactionIdsForMonth(month) ?: return false
+        return deleteTransactions(transactionIds)
+    }
+
+    private suspend fun loadTransactionIdsForMonth(month: YearMonth): List<Int>? {
+        val transactionIds = mutableListOf<Int>()
+        var cursor: String? = null
+        do {
+            val result =
+                api.transactions.list(
+                    TransactionListQuery(
+                        startDate = month.atDay(1).toString(),
+                        endDate = month.atEndOfMonth().toString(),
+                        limit = TRANSACTION_PAGE_LIMIT,
+                        cursor = cursor,
+                    ),
+                )
+            if (result !is ApiResult.Success || result.data == null) {
+                showFailure(result)
+                return null
+            }
+            transactionIds += result.data.items.map { it.id }
+            cursor = result.data.nextCursor
+        } while (cursor != null)
+
+        return transactionIds
+    }
+
+    private suspend fun deleteTransactions(transactionIds: List<Int>): Boolean {
+        transactionIds.forEach { transactionId ->
+            val result = api.transactions.delete(transactionId)
+            if (result !is ApiResult.Success) {
+                showFailure(result)
+                return false
+            }
+        }
+        return true
     }
 
     fun setLanguage(languageTag: String) {
