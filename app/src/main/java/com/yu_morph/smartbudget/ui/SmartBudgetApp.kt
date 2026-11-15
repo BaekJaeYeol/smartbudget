@@ -49,7 +49,7 @@ private const val DETAIL_SLIDE_DISTANCE_DIVISOR = 5
 
 @Composable
 @Suppress("LongMethod")
-fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Unit) {
+fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChanged: () -> Unit, onExit: () -> Unit) {
     var destination by rememberSaveable { mutableStateOf(AppDestination.SPLASH) }
     var openDocument by rememberSaveable { mutableStateOf<MarkdownDocument?>(null) }
     var openSettings by rememberSaveable { mutableStateOf<SettingsDetailDestination?>(null) }
@@ -60,7 +60,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onExit: () -> Un
     val api = remember(context) { SmartBudgetApiFactory.create(context.applicationContext) }
     val coordinator = remember(context, api, scope) { AuthCoordinator(context, api, scope) }
     val settingsCoordinator = remember(context, api, scope, onDisplayModeChanged) {
-        SettingsCoordinator(context, api, scope, onDisplayModeChanged)
+        SettingsCoordinator(context, api, scope, onDisplayModeChanged, onLanguageChanged)
     }
     DisposableEffect(api) {
         onDispose(api::close)

@@ -40,6 +40,7 @@ class SettingsCoordinator(
     private val api: SmartBudgetApi,
     private val scope: CoroutineScope,
     private val onDisplayModeChanged: (DisplayMode) -> Unit,
+    private val onLanguageChanged: () -> Unit,
 ) {
     private val applicationContext = context.applicationContext
     private val userIdentityStore = PreferenceStoreFactory.userIdentity(applicationContext)
@@ -180,6 +181,7 @@ class SettingsCoordinator(
 
     fun setLanguage(languageTag: String) {
         updateAppSettings(state.appSettings.copy(languageTag = languageTag))
+        onLanguageChanged()
     }
 
     fun setNotification(type: NotificationSetting, enabled: Boolean) {

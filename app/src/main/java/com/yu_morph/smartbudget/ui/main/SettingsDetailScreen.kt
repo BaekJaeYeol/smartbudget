@@ -235,6 +235,12 @@ private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSel
                 selected = selectedLanguage == "ko",
                 onClick = { onSelected("ko") },
             )
+            SelectableRow(
+                title = stringResource(R.string.settings_english),
+                subtitle = "🇺🇸",
+                selected = selectedLanguage == "en-US",
+                onClick = { onSelected("en-US") },
+            )
         }
     }
 }
