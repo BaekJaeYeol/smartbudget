@@ -60,6 +60,30 @@ interface UserIdentityStore {
     fun clear()
 }
 
+interface ProfileImageStore {
+    fun readUri(): String?
+
+    fun writeUri(uri: String)
+
+    fun clear()
+}
+
+class SharedPreferencesProfileImageStore(private val preferences: SharedPreferences) : ProfileImageStore {
+    override fun readUri(): String? = preferences.getString(KEY_IMAGE_URI, null)
+
+    override fun writeUri(uri: String) {
+        preferences.edit().putString(KEY_IMAGE_URI, uri).apply()
+    }
+
+    override fun clear() {
+        preferences.edit().clear().apply()
+    }
+
+    private companion object {
+        const val KEY_IMAGE_URI = "profile_image_uri"
+    }
+}
+
 class SharedPreferencesUserIdentityStore(private val preferences: SharedPreferences) : UserIdentityStore {
     override fun readUsername(): String? = preferences.getString(KEY_USERNAME, null)
 
@@ -175,6 +199,7 @@ object PreferenceStoreFactory {
     private const val RESPONSE_CACHE_FILE = "smartbudget_response_cache"
     private const val REMOTE_RESOURCE_FILE = "smartbudget_remote_resources"
     private const val USER_IDENTITY_FILE = "smartbudget_user_identity"
+    private const val PROFILE_IMAGE_FILE = "smartbudget_profile_image"
     private const val SECURE_AUTH_FILE = "smartbudget_secure_auth"
     private const val APP_SETTINGS_FILE = "smartbudget_app_settings"
 
@@ -188,6 +213,10 @@ object PreferenceStoreFactory {
 
     fun userIdentity(context: Context): UserIdentityStore = SharedPreferencesUserIdentityStore(
         context.getSharedPreferences(USER_IDENTITY_FILE, Context.MODE_PRIVATE),
+    )
+
+    fun profileImage(context: Context): ProfileImageStore = SharedPreferencesProfileImageStore(
+        context.getSharedPreferences(PROFILE_IMAGE_FILE, Context.MODE_PRIVATE),
     )
 
     fun appSettings(context: Context): AppSettingsStore = SharedPreferencesAppSettingsStore(

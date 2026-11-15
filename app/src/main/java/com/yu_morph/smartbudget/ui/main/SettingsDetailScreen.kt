@@ -2,8 +2,12 @@
 
 package com.yu_morph.smartbudget.ui.main
 
-import android.widget.Toast
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,7 +18,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -27,10 +33,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.SettingsBrightness
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +58,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -57,7 +66,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -72,9 +84,12 @@ import com.yu_morph.smartbudget.ui.auth.AuthTextField
 import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.auth.SignUpValidation
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
-import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class SettingsDetailDestination {
     ACCOUNT,
@@ -91,7 +106,8 @@ internal fun SettingsDetailScreen(
     destination: SettingsDetailDestination,
     state: SettingsUiState,
     onBack: () -> Unit,
-    onSaveAccount: (String, String, String, Int, Boolean, Boolean) -> Unit,
+    onSaveAccount: (String, String, String, Int, Boolean, Boolean, () -> Unit) -> Unit,
+    onProfileImageChanged: (String) -> Unit,
     onLoadBudget: () -> Unit,
     onSyncBankTransactions: () -> Unit,
     onLanguageSelected: (String) -> Unit,
@@ -99,7 +115,6 @@ internal fun SettingsDetailScreen(
     onDisplayModeChanged: (DisplayMode) -> Unit,
     onDeleteAccount: () -> Unit,
 ) {
-    var saveAction by remember(destination) { mutableStateOf<SettingsSaveAction?>(null) }
     BackHandler(onBack = onBack)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -118,13 +133,6 @@ internal fun SettingsDetailScreen(
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.navigate_back))
                     }
                 },
-                actions = {
-                    saveAction?.let { action ->
-                        IconButton(onClick = action.onSave, enabled = action.enabled && !state.isLoading) {
-                            Icon(Icons.Rounded.Save, stringResource(R.string.settings_save_action))
-                        }
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -135,7 +143,7 @@ internal fun SettingsDetailScreen(
                 modifier = Modifier.padding(innerPadding),
                 onLoad = onLoadBudget,
                 onSave = onSaveAccount,
-                onSaveActionChanged = { saveAction = it },
+                onProfileImageChanged = onProfileImageChanged,
             )
 
             SettingsDetailDestination.BANK_CONNECTION -> BankConnectionScreen(
@@ -175,91 +183,74 @@ private fun AccountSettings(
     state: SettingsUiState,
     modifier: Modifier,
     onLoad: () -> Unit,
-    onSave: (String, String, String, Int, Boolean, Boolean) -> Unit,
-    onSaveActionChanged: (SettingsSaveAction) -> Unit,
+    onSave: (String, String, String, Int, Boolean, Boolean, () -> Unit) -> Unit,
+    onProfileImageChanged: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    var displayName by rememberSaveable(state.displayName) { mutableStateOf(state.displayName) }
+    var dialog by rememberSaveable { mutableStateOf<AccountEditDialog?>(null) }
+    var displayNameInput by rememberSaveable { mutableStateOf("") }
     var currentPassword by rememberSaveable { mutableStateOf("") }
     var newPassword by rememberSaveable { mutableStateOf("") }
     var passwordConfirmation by rememberSaveable { mutableStateOf("") }
-    var amountText by rememberSaveable(state.budgetAmount) { mutableStateOf(state.budgetAmount.toString()) }
-    val amount = amountText.toIntOrNull()
-    val passwordUnchanged = currentPassword.isBlank() && newPassword.isBlank() && passwordConfirmation.isBlank()
-    val passwordValid = isPasswordUpdateValid(currentPassword, newPassword, passwordConfirmation)
-    val profileChanged = displayName.trim() != state.displayName || !passwordUnchanged
-    val budgetChanged = amountText != state.budgetAmount.toString()
-    val saveAction =
-        remember(
-            displayName,
-            currentPassword,
-            newPassword,
-            passwordConfirmation,
-            amount,
-            profileChanged,
-            budgetChanged,
-            onSave,
-        ) {
-            SettingsSaveAction(
-                enabled = profileChanged || budgetChanged,
-                onSave = {
-                    if (!SignUpValidation.isValidDisplayName(displayName) || (!passwordUnchanged && !passwordValid)) {
-                        Toast.makeText(context, R.string.settings_profile_invalid_input, Toast.LENGTH_SHORT).show()
-                    } else if (amount == null || amount !in 0..10_000_000) {
-                        Toast.makeText(context, R.string.settings_budget_invalid_input, Toast.LENGTH_SHORT).show()
-                    } else {
-                        onSave(
-                            displayName.trim(),
-                            currentPassword,
-                            newPassword,
-                            amount,
-                            profileChanged,
-                            budgetChanged,
-                        )
-                    }
-                },
-            )
+    var budgetInput by rememberSaveable { mutableStateOf("") }
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                onProfileImageChanged(it.toString())
+            }
         }
-    LaunchedEffect(saveAction) { onSaveActionChanged(saveAction) }
     LaunchedEffect(Unit) { onLoad() }
     SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_name_section)) {
-            AuthTextField(
-                value = displayName,
-                onValueChange = { displayName = it },
-                placeholder = stringResource(R.string.display_name_hint),
-            )
-            Text(
-                text = stringResource(R.string.display_name_condition_label),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-            )
-        }
-        SettingsSection(title = stringResource(R.string.settings_password_section)) {
-            PasswordField(currentPassword, { currentPassword = it }, R.string.settings_current_password)
-            PasswordField(newPassword, { newPassword = it }, R.string.settings_new_password)
-            PasswordField(passwordConfirmation, { passwordConfirmation = it }, R.string.password_confirm_hint)
-            Text(
-                text = stringResource(R.string.password_condition_label),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-            )
+        SettingsSection(title = stringResource(R.string.settings_basic_information)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                ProfileImage(
+                    imageUri = state.profileImageUri,
+                    onClick = { imagePicker.launch(arrayOf("image/*")) },
+                )
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AccountInfoLine(stringResource(R.string.username_label), state.userId)
+                    AccountInfoLine(stringResource(R.string.display_name_hint), state.displayName)
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(
+                    onClick = {
+                        displayNameInput = state.displayName
+                        dialog = AccountEditDialog.DISPLAY_NAME
+                    },
+                ) {
+                    Icon(Icons.Outlined.Edit, stringResource(R.string.settings_edit_display_name))
+                }
+                IconButton(onClick = { dialog = AccountEditDialog.PASSWORD }) {
+                    Icon(Icons.Outlined.Lock, stringResource(R.string.settings_change_password))
+                }
+            }
         }
         SettingsSection(title = stringResource(R.string.settings_monthly_budget_section)) {
-            AuthTextField(
-                value = amountText,
-                onValueChange = { value -> amountText = value.filter(Char::isDigit).take(8) },
-                placeholder = stringResource(R.string.settings_budget_amount),
-                suffix = { Text(stringResource(R.string.settings_won)) },
-                keyboardType = KeyboardType.Number,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(500_000, 1_000_000, 2_000_000).forEach { amount ->
-                    BudgetPresetButton(
-                        text = stringResource(R.string.settings_budget_quick_amount, amount / 10_000),
-                        onClick = { amountText = amount.toString() },
-                        modifier = Modifier.weight(1f),
-                    )
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(
+                        R.string.settings_current_budget_value,
+                        NumberFormat.getNumberInstance(Locale.KOREA).format(state.budgetAmount),
+                    ),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                IconButton(
+                    onClick = {
+                        budgetInput = state.budgetAmount.toString()
+                        dialog = AccountEditDialog.BUDGET
+                    },
+                ) {
+                    Icon(Icons.Outlined.Edit, stringResource(R.string.settings_edit_budget))
                 }
             }
             Text(
@@ -273,21 +264,282 @@ private fun AccountSettings(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                state.budgetHistory.forEach { item ->
-                    SettingValueRow(
-                        label = item.month.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
-                        value = stringResource(
-                            R.string.settings_budget_history_amount,
-                            NumberFormat.getNumberInstance(Locale.KOREA).format(item.amount),
-                        ),
-                    )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    state.budgetHistory.take(3).forEach { item ->
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(item.month.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatCompactBudget(item.amount), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    repeat(3 - state.budgetHistory.take(3).size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
     }
+    when (dialog) {
+        AccountEditDialog.DISPLAY_NAME -> DisplayNameDialog(
+            value = displayNameInput,
+            onValueChange = { displayNameInput = it },
+            onDismiss = { dialog = null },
+            onSave = {
+                onSave(displayNameInput.trim(), "", "", state.budgetAmount, true, false) { dialog = null }
+            },
+        )
+
+        AccountEditDialog.PASSWORD -> PasswordChangeDialog(
+            currentPassword = currentPassword,
+            newPassword = newPassword,
+            confirmation = passwordConfirmation,
+            onCurrentPasswordChange = { currentPassword = it },
+            onNewPasswordChange = { newPassword = it },
+            onConfirmationChange = { passwordConfirmation = it },
+            onDismiss = { dialog = null },
+            onSave = {
+                onSave(state.displayName, currentPassword, newPassword, state.budgetAmount, true, false) {
+                    dialog = null
+                }
+            },
+        )
+
+        AccountEditDialog.BUDGET -> BudgetEditDialog(
+            value = budgetInput,
+            onValueChange = { budgetInput = it.filter(Char::isDigit).take(9) },
+            onDismiss = { dialog = null },
+            onSave = { amount ->
+                onSave(state.displayName, "", "", amount, false, true) { dialog = null }
+            },
+        )
+
+        null -> Unit
+    }
 }
 
-private data class SettingsSaveAction(val enabled: Boolean, val onSave: () -> Unit)
+private enum class AccountEditDialog { DISPLAY_NAME, PASSWORD, BUDGET }
+
+@Composable
+private fun ProfileImage(imageUri: String?, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, imageUri) {
+        value =
+            withContext(Dispatchers.IO) {
+                imageUri?.let { storedUri ->
+                    runCatching {
+                        context.contentResolver.openInputStream(Uri.parse(storedUri))?.use { stream ->
+                            BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                        }
+                    }.getOrNull()
+                }
+            }
+    }
+    Box(
+        modifier =
+            Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!,
+                contentDescription = stringResource(R.string.settings_profile_image),
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = stringResource(R.string.settings_profile_image),
+                modifier = Modifier.size(34.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountInfoLine(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text(
+            value.ifBlank { stringResource(R.string.settings_value_unavailable) },
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun DisplayNameDialog(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_edit_display_name)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AuthTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    placeholder = stringResource(R.string.display_name_hint),
+                )
+                Text(
+                    stringResource(R.string.display_name_condition_label),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave, enabled = SignUpValidation.isValidDisplayName(value)) {
+                Text(stringResource(R.string.settings_save_action))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close_action)) } },
+    )
+}
+
+@Composable
+private fun PasswordChangeDialog(
+    currentPassword: String,
+    newPassword: String,
+    confirmation: String,
+    onCurrentPasswordChange: (String) -> Unit,
+    onNewPasswordChange: (String) -> Unit,
+    onConfirmationChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_change_password)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    stringResource(R.string.settings_password_dialog_message),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                PasswordField(currentPassword, onCurrentPasswordChange, R.string.settings_current_password)
+                PasswordField(newPassword, onNewPasswordChange, R.string.settings_new_password)
+                PasswordField(confirmation, onConfirmationChange, R.string.password_confirm_hint)
+                Text(
+                    stringResource(R.string.password_condition_label),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onSave,
+                enabled = isPasswordUpdateValid(currentPassword, newPassword, confirmation),
+            ) {
+                Text(stringResource(R.string.settings_change_password))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close_action)) } },
+    )
+}
+
+@Composable
+private fun BudgetEditDialog(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (Int) -> Unit,
+) {
+    val amount = value.toIntOrNull()
+    val updateAmount: (Int) -> Unit = { changed -> onValueChange(changed.coerceIn(0, 999_999_999).toString()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_edit_budget)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AuthTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    placeholder = stringResource(R.string.settings_budget_amount),
+                    suffix = { Text(stringResource(R.string.settings_won)) },
+                    keyboardType = KeyboardType.Number,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(500_000, 1_000_000, 2_000_000).forEach { preset ->
+                        BudgetPresetButton(
+                            text = stringResource(R.string.settings_budget_quick_amount, preset / 10_000),
+                            onClick = { updateAmount(preset) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    listOf(-1_000_000, -100_000, -10_000, 10_000, 100_000, 1_000_000).forEach { delta ->
+                        BudgetAdjustmentButton(
+                            delta = delta,
+                            onClick = { updateAmount((amount ?: 0) + delta) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { amount?.let(onSave) }, enabled = amount != null) {
+                Text(stringResource(R.string.settings_save_action))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close_action)) } },
+    )
+}
+
+@Composable
+private fun BudgetAdjustmentButton(delta: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(horizontal = 1.dp, vertical = 0.dp),
+    ) {
+        Text(
+            text =
+                stringResource(
+                    if (delta <
+                        0
+                    ) {
+                        R.string.settings_budget_adjust_decrease
+                    } else {
+                        R.string.settings_budget_adjust_increase
+                    },
+                    kotlin.math.abs(delta) / 10_000,
+                ),
+            fontSize = 10.sp,
+            maxLines = 1,
+        )
+    }
+}
+
+internal fun formatCompactBudget(amount: Int, language: String = Locale.getDefault().language): String {
+    val formatter = DecimalFormat("0.#", DecimalFormatSymbols(Locale.US))
+    return if (language == Locale.KOREAN.language) {
+        when {
+            amount >= 100_000_000 -> "${formatter.format(amount / 100_000_000.0)}억원"
+            amount >= 10_000 -> "${formatter.format(amount / 10_000.0)}만원"
+            else -> "${NumberFormat.getNumberInstance(Locale.KOREA).format(amount)}원"
+        }
+    } else {
+        when {
+            amount >= 1_000_000 -> "${formatter.format(amount / 1_000_000.0)}M￦"
+            amount >= 1_000 -> "${formatter.format(amount / 1_000.0)}K￦"
+            else -> "$amount￦"
+        }
+    }
+}
 
 private fun isPasswordUpdateValid(currentPassword: String, newPassword: String, confirmation: String): Boolean =
     currentPassword.isNotBlank() && SignUpValidation.isValidPassword(newPassword) && newPassword == confirmation
@@ -539,14 +791,6 @@ private fun SwitchRow(label: Int, checked: Boolean, onCheckedChange: (Boolean) -
             onCheckedChange = null,
             modifier = Modifier.graphicsLayer(scaleX = 0.82f, scaleY = 0.82f),
         )
-    }
-}
-
-@Composable
-private fun SettingValueRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Text(label, modifier = Modifier.weight(1f))
-        Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -23,7 +23,7 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private const val BUDGET_HISTORY_MONTHS = 12L
+private const val BUDGET_HISTORY_MONTHS = 3L
 private const val TRANSACTION_PAGE_LIMIT = 100
 private const val BANK_SYNC_START_DATE = "2025-01-01"
 private const val BANK_SYNC_END_DATE = "2026-12-31"
@@ -33,6 +33,7 @@ data class BudgetHistoryItem(val month: YearMonth, val amount: Int)
 data class SettingsUiState(
     val displayName: String = "",
     val userId: String = "",
+    val profileImageUri: String? = null,
     val versionName: String = "",
     val buildDateTime: String = "",
     val appSettings: AppSettings = AppSettings(),
@@ -52,11 +53,13 @@ class SettingsCoordinator(
 ) {
     private val applicationContext = context.applicationContext
     private val userIdentityStore = PreferenceStoreFactory.userIdentity(applicationContext)
+    private val profileImageStore = PreferenceStoreFactory.profileImage(applicationContext)
     private val appSettingsStore = PreferenceStoreFactory.appSettings(applicationContext)
 
     var state by mutableStateOf(
         SettingsUiState(
             userId = userIdentityStore.readUsername().orEmpty(),
+            profileImageUri = profileImageStore.readUri(),
             versionName = readVersionName(),
             buildDateTime = BuildMetadata.BUILD_DATETIME,
             appSettings = appSettingsStore.read(),
@@ -65,7 +68,11 @@ class SettingsCoordinator(
         private set
 
     fun refresh() {
-        state = state.copy(userId = userIdentityStore.readUsername().orEmpty())
+        state =
+            state.copy(
+                userId = userIdentityStore.readUsername().orEmpty(),
+                profileImageUri = profileImageStore.readUri(),
+            )
         scope.launch {
             val result = api.auth.getAccount()
             if (result is ApiResult.Success) {
@@ -131,6 +138,11 @@ class SettingsCoordinator(
                 state = state.copy(isLoading = false)
             }
         }
+    }
+
+    fun updateProfileImage(uri: String) {
+        profileImageStore.writeUri(uri)
+        state = state.copy(profileImageUri = uri)
     }
 
     fun deleteAccount(onSuccess: () -> Unit) {

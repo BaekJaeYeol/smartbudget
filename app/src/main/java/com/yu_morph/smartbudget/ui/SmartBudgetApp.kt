@@ -103,7 +103,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                         destination = settings,
                         state = settingsCoordinator.state,
                         onBack = { openSettings = null },
-                        onSaveAccount = { name, current, new, budget, profileChanged, budgetChanged ->
+                        onSaveAccount = { name, current, new, budget, profileChanged, budgetChanged, onSaved ->
                             settingsCoordinator.saveAccountSettings(
                                 name,
                                 current,
@@ -112,14 +112,16 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                                 profileChanged,
                                 budgetChanged,
                             ) { passwordChanged ->
-                                openSettings = null
+                                onSaved()
                                 afterProfileSaved(passwordChanged) {
+                                    openSettings = null
                                     coordinator.signOut()
                                     selectedMainTab = MainTab.HOME
                                     destination = AppDestination.LOGIN
                                 }
                             }
                         },
+                        onProfileImageChanged = settingsCoordinator::updateProfileImage,
                         onLoadBudget = settingsCoordinator::loadMonthlyBudget,
                         onSyncBankTransactions = {
                             settingsCoordinator.syncBankTransactions { openSettings = null }

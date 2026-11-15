@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 class AuthCoordinator(context: Context, private val api: SmartBudgetApi, private val scope: CoroutineScope) {
     private val applicationContext = context.applicationContext
     private val userIdentityStore = PreferenceStoreFactory.userIdentity(applicationContext)
+    private val profileImageStore = PreferenceStoreFactory.profileImage(applicationContext)
 
     var isLoading by mutableStateOf(false)
         private set
@@ -69,6 +70,7 @@ class AuthCoordinator(context: Context, private val api: SmartBudgetApi, private
     fun signOut() {
         api.auth.signOut()
         userIdentityStore.clear()
+        profileImageStore.clear()
     }
 
     private fun <T> executeRequest(
