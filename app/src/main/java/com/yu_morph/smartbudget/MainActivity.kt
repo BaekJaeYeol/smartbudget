@@ -15,6 +15,7 @@ import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.data.local.PreferenceStoreFactory
 import com.yu_morph.smartbudget.ui.SmartBudgetApp
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetTheme
+import com.blongho.country_data.World
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        World.init(applicationContext)
         enableEdgeToEdge()
         setContent {
             var displayMode by remember {

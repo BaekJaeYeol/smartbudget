@@ -61,6 +61,7 @@ import com.yu_morph.smartbudget.ui.auth.AuthTextField
 import com.yu_morph.smartbudget.ui.auth.PrimaryAuthButton
 import com.yu_morph.smartbudget.ui.auth.SignUpValidation
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
+import com.blongho.country_data.World
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -273,8 +274,8 @@ private fun BudgetSettings(state: SettingsUiState, modifier: Modifier, onLoad: (
 private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSelected: (String) -> Unit) {
     val languages =
         listOf(
-            LanguageOption("en-US", "English", R.drawable.flag_us, R.string.settings_english_flag),
-            LanguageOption("ko", "한국어", R.drawable.flag_kr, R.string.settings_korean_flag),
+            LanguageOption("en-US", "English", "us", R.string.settings_english_flag),
+            LanguageOption("ko", "한국어", "kr", R.string.settings_korean_flag),
         ).sortedByDescending { it.tag }
     SettingsColumn(modifier) {
         languages.forEach { language ->
@@ -284,7 +285,7 @@ private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSel
                 onClick = { onSelected(language.tag) },
                 leadingContent = {
                     Image(
-                        painter = painterResource(language.flagResource),
+                        painter = painterResource(World.getFlagOf(language.countryCode)),
                         contentDescription = stringResource(language.flagDescriptionResource),
                         modifier = Modifier.size(width = 34.dp, height = 24.dp).clip(RoundedCornerShape(5.dp)),
                     )
@@ -517,7 +518,7 @@ private fun SettingsDetailDestination.titleResource(): Int = when (this) {
 private data class LanguageOption(
     val tag: String,
     val nativeName: String,
-    val flagResource: Int,
+    val countryCode: String,
     val flagDescriptionResource: Int,
 )
 
