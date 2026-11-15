@@ -411,7 +411,7 @@ private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 8.dp, start = 24.dp, end = 24.dp, bottom = 24.dp),
+                .padding(top = 20.dp, start = 24.dp, end = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
@@ -441,7 +441,7 @@ private fun SettingsSection(title: String, content: @Composable ColumnScope.() -
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         content()
     }
 }
