@@ -409,6 +409,8 @@ private fun WithdrawalSettings(modifier: Modifier, onDeleteAccount: () -> Unit) 
         PrimaryAuthButton(
             text = stringResource(R.string.settings_withdraw_action),
             onClick = { showConfirmation = true },
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
         )
     }
     if (showConfirmation) {

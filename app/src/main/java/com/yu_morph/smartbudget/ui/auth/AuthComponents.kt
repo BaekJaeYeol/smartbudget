@@ -14,10 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
@@ -71,6 +73,8 @@ internal fun PrimaryAuthButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    fontWeight: FontWeight? = null,
 ) {
     Button(
         onClick = onClick,
@@ -79,6 +83,6 @@ internal fun PrimaryAuthButton(
         shape = RoundedCornerShape(9.dp),
         colors = ButtonDefaults.buttonColors(containerColor = SmartBudgetGreen),
     ) {
-        Text(text)
+        Text(text = text, fontSize = fontSize, fontWeight = fontWeight)
     }
 }

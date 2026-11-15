@@ -131,6 +131,8 @@ internal fun BankConnectionScreen(isLoading: Boolean, modifier: Modifier = Modif
             text = stringResource(R.string.settings_bank_connect),
             enabled = selectedKeys.isNotEmpty(),
             onClick = onConnect,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
