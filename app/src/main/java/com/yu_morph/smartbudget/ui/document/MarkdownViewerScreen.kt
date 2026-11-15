@@ -1,7 +1,9 @@
 package com.yu_morph.smartbudget.ui.document
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.ui.main.mainScreenBackgroundBrush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -88,16 +91,21 @@ internal fun MarkdownViewerScreen(document: MarkdownDocument, onBack: () -> Unit
             )
         },
     ) { innerPadding ->
-        when {
-            loadFailed -> Text(
-                text = stringResource(R.string.markdown_document_load_error),
-                modifier = Modifier.padding(innerPadding).padding(24.dp),
-            )
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(mainScreenBackgroundBrush()),
+        ) {
+            when {
+                loadFailed -> Text(
+                    text = stringResource(R.string.markdown_document_load_error),
+                    modifier = Modifier.padding(24.dp),
+                )
 
-            content != null -> MarkdownContent(
-                markdown = content.orEmpty(),
-                modifier = Modifier.padding(innerPadding),
-            )
+                content != null -> MarkdownContent(markdown = content.orEmpty())
+            }
         }
     }
 }

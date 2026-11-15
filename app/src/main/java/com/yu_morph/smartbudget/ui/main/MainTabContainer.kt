@@ -26,6 +26,20 @@ internal fun MainTabContainer(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val backgroundBrush = mainScreenBackgroundBrush()
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(backgroundBrush)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, top = 48.dp, end = 20.dp, bottom = bottomPadding),
+        content = content,
+    )
+}
+
+@Composable
+internal fun mainScreenBackgroundBrush(): Brush {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors =
         if (isDark) {
@@ -37,13 +51,5 @@ internal fun MainTabContainer(
         } else {
             listOf(TabGradientStart, TabGradientCenter, TabGradientEnd)
         }
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(Brush.linearGradient(colors))
-                .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, top = 48.dp, end = 20.dp, bottom = bottomPadding),
-        content = content,
-    )
+    return Brush.linearGradient(colors)
 }
