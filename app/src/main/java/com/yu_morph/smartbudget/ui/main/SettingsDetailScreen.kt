@@ -387,18 +387,30 @@ private fun WithdrawalSettings(
     var password by rememberSaveable { mutableStateOf("") }
     var showConfirmation by rememberSaveable { mutableStateOf(false) }
     SettingsColumn(modifier) {
-        SettingsSection(title = stringResource(R.string.settings_withdraw)) {
-            Text(
-                stringResource(R.string.settings_withdraw_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PasswordField(password, { password = it }, R.string.settings_current_password)
-            PrimaryAuthButton(
-                text = stringResource(R.string.settings_verify_password),
-                onClick = { onVerify(password) { showConfirmation = true } },
-                enabled = password.isNotBlank(),
-            )
-        }
+        Text(
+            text = stringResource(R.string.settings_withdraw_confirm_title),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.settings_withdraw_subtitle),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Image(
+            painter = painterResource(R.drawable.account_withdrawal_robot),
+            contentDescription = stringResource(R.string.settings_withdraw_robot_description),
+            modifier = Modifier.align(Alignment.CenterHorizontally).size(210.dp),
+        )
+        Text(
+            stringResource(R.string.settings_withdraw_description),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        PasswordField(password, { password = it }, R.string.settings_current_password)
+        PrimaryAuthButton(
+            text = stringResource(R.string.settings_withdraw_action),
+            onClick = { onVerify(password) { showConfirmation = true } },
+            enabled = password.isNotBlank(),
+        )
     }
     if (showConfirmation) {
         AlertDialog(
