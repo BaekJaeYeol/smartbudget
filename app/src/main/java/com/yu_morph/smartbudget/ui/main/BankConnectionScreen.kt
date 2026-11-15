@@ -29,8 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -195,7 +195,7 @@ private fun BankItem(bank: BankOption, selected: Boolean, onClick: () -> Unit) {
             Text(
                 text = stringResource(bank.nameResource),
                 modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -278,14 +278,19 @@ private fun BankSyncLoading(modifier: Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(R.drawable.bank_sync_loading),
+            painter = painterResource(R.drawable.bank_sync_robot),
             contentDescription = null,
-            modifier = Modifier.size(156.dp),
+            modifier = Modifier.size(220.dp),
         )
-        CircularProgressIndicator(
-            modifier = Modifier.padding(top = 18.dp).size(28.dp),
+        LinearProgressIndicator(
+            modifier =
+                Modifier
+                    .padding(top = 18.dp)
+                    .fillMaxWidth(0.55f)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(3.dp)),
             color = SmartBudgetGreen,
-            strokeWidth = 3.dp,
+            trackColor = SmartBudgetGreen.copy(alpha = 0.16f),
         )
         Text(
             text = stringResource(R.string.settings_bank_fetching),
