@@ -115,7 +115,7 @@ internal fun SettingsScreen(
                         },
                     ),
                 ).verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, top = 48.dp, end = 20.dp, bottom = bottomContentPadding),
+                .padding(start = 20.dp, top = 40.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         ProfileHeader(
@@ -155,11 +155,11 @@ internal fun SettingsScreen(
 @Composable
 private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(50.dp),
             shape = CircleShape,
             color = SettingsAvatarBackground,
         ) {
@@ -171,10 +171,9 @@ private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> U
             )
         }
         Column(
-            modifier = Modifier.padding(start = 18.dp).weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.padding(start = 12.dp).weight(1f)
         ) {
-            Text(text = displayName, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(text = displayName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(
                 text =
                     if (userId.isBlank()) {
@@ -183,13 +182,14 @@ private fun ProfileHeader(displayName: String, userId: String, onLogout: () -> U
                         userId
                     },
                 color = SettingsSecondaryText,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
             )
         }
         IconButton(onClick = onLogout) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Logout,
                 contentDescription = stringResource(R.string.settings_logout),
+                modifier = Modifier.size(20.dp),
                 tint = SettingsPrimaryText,
             )
         }
