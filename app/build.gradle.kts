@@ -113,6 +113,8 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
     private fun licenseFor(group: String): License = when {
         group == "com.kizitonwose.calendar" -> License("mit", "MIT License", "mit.txt")
 
+        group == "com.github.blongho" -> License("mit", "MIT License", "mit.txt")
+
         group == "org.slf4j" -> License("mit", "MIT License", "mit.txt")
 
         group.startsWith("androidx.") ||
@@ -133,6 +135,7 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
         group.startsWith("androidx.") -> "The Android Open Source Project"
         group.startsWith("com.google.") -> "Google LLC"
         group == "com.kizitonwose.calendar" -> "Kizito Nwose 및 기여자"
+        group == "com.github.blongho" -> "Bernard Longho 및 기여자"
         group == "io.ktor" -> "JetBrains s.r.o. 및 기여자"
         group == "org.jetbrains" || group.startsWith("org.jetbrains.") -> "JetBrains s.r.o. 및 기여자"
         group == "org.jspecify" -> "JSpecify 기여자"
