@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -242,6 +243,7 @@ private fun SvgAssetImage(
 }
 
 private const val SVG_RENDER_SCALE = 8
+private const val BANK_SYNC_CONTENT_OFFSET_DP = 42
 
 @Composable
 private fun SelectionCheck(selected: Boolean, onClick: (() -> Unit)? = null) {
@@ -273,7 +275,11 @@ private fun SelectionCheck(selected: Boolean, onClick: (() -> Unit)? = null) {
 @Composable
 private fun BankSyncLoading(modifier: Modifier) {
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .offset(y = (-BANK_SYNC_CONTENT_OFFSET_DP).dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
