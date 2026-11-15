@@ -275,7 +275,7 @@ private fun LanguageSettings(selectedLanguage: String, modifier: Modifier, onSel
         listOf(
             LanguageOption("en-US", "English", R.drawable.flag_us, R.string.settings_english_flag),
             LanguageOption("ko", "한국어", R.drawable.flag_kr, R.string.settings_korean_flag),
-        ).sortedBy { it.tag }
+        ).sortedByDescending { it.tag }
     SettingsColumn(modifier) {
         languages.forEach { language ->
             SelectionRow(
