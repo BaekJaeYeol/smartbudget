@@ -56,6 +56,10 @@ class ApiRequestExecutor(
 
     private val normalizedBaseUrl = baseUrl.trimEnd('/')
 
+    fun invalidateResponseCache() {
+        responseCache.clear()
+    }
+
     suspend inline fun <reified T> execute(
         method: HttpMethod,
         path: String,

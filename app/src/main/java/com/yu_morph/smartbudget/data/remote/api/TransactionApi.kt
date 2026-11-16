@@ -20,8 +20,12 @@ data class TransactionListQuery(
 )
 
 class TransactionApi(private val executor: ApiRequestExecutor) {
+    fun invalidateCache() {
+        executor.invalidateResponseCache()
+    }
+
     suspend fun list(query: TransactionListQuery = TransactionListQuery()): ApiResult<TransactionPageData> =
-        executor.execute(
+        executor.execute<TransactionPageData>(
             method = HttpMethod.Get,
             path = "/api/v1/transaction",
             authenticated = true,
@@ -34,14 +38,14 @@ class TransactionApi(private val executor: ApiRequestExecutor) {
         }
 
     suspend fun create(request: CreateTransactionRequest, idempotencyKey: String? = null): ApiResult<TransactionData> =
-        executor.execute(
+        executor.execute<TransactionData>(
             method = HttpMethod.Post,
             path = "/api/v1/transaction",
             authenticated = true,
             body = executor.json.parseToJsonElement(executor.json.encodeToString(request)),
         ) {
             idempotencyKey?.let { header("Idempotency-Key", it) }
-        }
+        }.also(::invalidateCacheOnSuccess)
 
     suspend fun get(id: Int): ApiResult<TransactionData> = executor.execute(
         method = HttpMethod.Get,
@@ -50,16 +54,21 @@ class TransactionApi(private val executor: ApiRequestExecutor) {
         cacheKey = "transaction:$id",
     )
 
-    suspend fun update(id: Int, request: UpdateTransactionRequest): ApiResult<TransactionData> = executor.execute(
-        method = HttpMethod.Patch,
-        path = "/api/v1/transaction/$id",
-        authenticated = true,
-        body = request.toJson(executor.json),
-    )
+    suspend fun update(id: Int, request: UpdateTransactionRequest): ApiResult<TransactionData> =
+        executor.execute<TransactionData>(
+            method = HttpMethod.Patch,
+            path = "/api/v1/transaction/$id",
+            authenticated = true,
+            body = request.toJson(executor.json),
+        ).also(::invalidateCacheOnSuccess)
 
-    suspend fun delete(id: Int): ApiResult<JsonElement> = executor.execute(
+    suspend fun delete(id: Int): ApiResult<JsonElement> = executor.execute<JsonElement>(
         method = HttpMethod.Delete,
         path = "/api/v1/transaction/$id",
         authenticated = true,
-    )
+    ).also(::invalidateCacheOnSuccess)
+
+    private fun invalidateCacheOnSuccess(result: ApiResult<*>) {
+        if (result is ApiResult.Success) invalidateCache()
+    }
 }

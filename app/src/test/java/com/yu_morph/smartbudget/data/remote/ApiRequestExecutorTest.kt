@@ -89,6 +89,17 @@ class ApiRequestExecutorTest {
     }
 
     @Test
+    fun `응답 캐시 무효화는 저장된 조회 결과를 제거한다`() {
+        val stores = TestStores()
+        stores.write("transactions", VERSION_RESPONSE)
+        val executor = executor(stores) { error("네트워크 요청이 발생하면 안 됩니다") }
+
+        executor.invalidateResponseCache()
+
+        assertNull(stores.read("transactions"))
+    }
+
+    @Test
     fun `오류 코드와 재시도 시간을 보존한다`() = runBlocking {
         val stores = TestStores()
         val executor =
@@ -171,6 +182,7 @@ class ApiRequestExecutorTest {
         }
         override fun clear() {
             storedToken = null
+            responses.clear()
         }
         override fun read(key: String): String? = responses[key]
         override fun write(key: String, value: String) {

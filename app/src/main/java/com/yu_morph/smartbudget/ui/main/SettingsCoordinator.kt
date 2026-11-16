@@ -242,6 +242,7 @@ class SettingsCoordinator(
                     showFailure(result)
                     return@launch
                 }
+                api.transactions.invalidateCache()
                 if (!deleteTransactionsInSyncRange()) return@launch
                 val syncSessionId = UUID.randomUUID().toString()
                 result.data.transactions.forEach { transaction ->
