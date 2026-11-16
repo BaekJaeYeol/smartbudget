@@ -1,7 +1,6 @@
 package com.yu_morph.smartbudget.ui.main
 
 import android.os.SystemClock
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
@@ -61,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.ui.document.MarkdownDocument
+import com.yu_morph.smartbudget.ui.showAppToast
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.YearMonth
 import kotlinx.coroutines.launch
@@ -106,7 +106,7 @@ internal fun MainScreen(
         if (exitConfirmation.shouldExit(SystemClock.elapsedRealtime())) {
             onExit()
         } else {
-            Toast.makeText(context, R.string.exit_confirmation, Toast.LENGTH_SHORT).show()
+            context.showAppToast(R.string.exit_confirmation)
         }
     }
     Scaffold(

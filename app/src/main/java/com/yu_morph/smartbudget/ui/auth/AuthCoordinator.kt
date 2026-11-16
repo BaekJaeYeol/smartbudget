@@ -1,7 +1,6 @@
 package com.yu_morph.smartbudget.ui.auth
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,6 +10,7 @@ import com.yu_morph.smartbudget.data.remote.ApiResult
 import com.yu_morph.smartbudget.data.remote.SmartBudgetApi
 import com.yu_morph.smartbudget.data.remote.model.SignInRequest
 import com.yu_morph.smartbudget.data.remote.model.SignUpRequest
+import com.yu_morph.smartbudget.ui.showAppToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -120,7 +120,7 @@ class AuthCoordinator(context: Context, private val api: SmartBudgetApi, private
     }
 
     private fun showToast(messageRes: Int) {
-        Toast.makeText(applicationContext, messageRes, Toast.LENGTH_SHORT).show()
+        applicationContext.showAppToast(messageRes)
     }
 
     private companion object {

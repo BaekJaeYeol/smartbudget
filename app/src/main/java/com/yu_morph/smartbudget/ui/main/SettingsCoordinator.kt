@@ -1,7 +1,6 @@
 package com.yu_morph.smartbudget.ui.main
 
 import android.content.Context
-import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +17,7 @@ import com.yu_morph.smartbudget.data.remote.model.ReplaceMonthlyBudgetRequest
 import com.yu_morph.smartbudget.data.remote.model.TransactionSource
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
 import com.yu_morph.smartbudget.data.remote.model.UpdateAccountRequest
+import com.yu_morph.smartbudget.ui.showAppToast
 import java.time.YearMonth
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -269,11 +269,7 @@ class SettingsCoordinator(
                         return@launch
                     }
                 }
-                Toast.makeText(
-                    applicationContext,
-                    applicationContext.getString(R.string.settings_bank_sync_success, result.data.count),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                applicationContext.showAppToast(R.string.settings_bank_sync_success, result.data.count)
                 onSuccess()
             } catch (_: Exception) {
                 showToast(R.string.unknown_error)
@@ -387,7 +383,7 @@ class SettingsCoordinator(
     }
 
     private fun showToast(@StringRes message: Int) {
-        Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+        applicationContext.showAppToast(message)
     }
 
     private fun readVersionName(): String = applicationContext.packageManager
