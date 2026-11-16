@@ -3,7 +3,6 @@
 package com.yu_morph.smartbudget.ui.main
 
 import androidx.activity.compose.BackHandler
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,48 +13,35 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,19 +54,6 @@ import java.time.YearMonth
 private val CalendarIncomeColor = Color(0xFF3FB284)
 private val CalendarExpenseColor = Color(0xFFF1A443)
 private val CalendarTransferColor = Color(0xFF4B88D8)
-private val SampleTransactions =
-    listOf(
-        LedgerTransaction(R.string.sample_meal_set, R.string.sample_grocery, "-24,800원"),
-        LedgerTransaction(R.string.sample_cafe_order, R.string.sample_cafe, "-6,500원"),
-        LedgerTransaction(R.string.sample_bus_ride, R.string.sample_transport, "-1,300원"),
-        LedgerTransaction(R.string.sample_received_money, R.string.sample_deposit, "+50,000원"),
-    )
-
-private data class LedgerTransaction(
-    @param:StringRes val title: Int,
-    @param:StringRes val category: Int,
-    val amount: String,
-)
 
 @Composable
 internal fun BudgetBookRoute(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Unit) =
@@ -141,8 +114,6 @@ private fun BudgetBookOverview(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Un
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BudgetBookDetailScreen(month: YearMonth, onMonthChange: (YearMonth) -> Unit, onBack: () -> Unit) {
-    var showEditor by rememberSaveable { mutableStateOf(false) }
-    var editingTitle by rememberSaveable { mutableStateOf("") }
     BackHandler(onBack = onBack)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -165,104 +136,76 @@ internal fun BudgetBookDetailScreen(month: YearMonth, onMonthChange: (YearMonth)
             )
         },
     ) { innerPadding ->
-        Box(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 20.dp, top = 20.dp, end = 20.dp),
-            ) {
-                LedgerCard {
-                    MonthSelector(month, onMonthChange)
-                    Spacer(Modifier.height(14.dp))
-                    MonthCalendar(month = month, compact = false)
-                }
-                Spacer(Modifier.height(14.dp))
-                LedgerCard {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(
-                            stringResource(R.string.budget_book_selected_transactions),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            stringResource(R.string.budget_book_transaction_count, 4),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    SampleTransactions.forEach { transaction ->
-                        val title = stringResource(transaction.title)
-                        TransactionEntry(transaction) {
-                            editingTitle = title
-                            showEditor = true
-                        }
-                    }
-                }
-                Spacer(Modifier.height(76.dp))
-            }
-            FloatingActionButton(
-                onClick = {
-                    editingTitle = ""
-                    showEditor = true
-                },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 20.dp),
-                containerColor = SmartBudgetGreen,
-                contentColor = Color.White,
-            ) {
-                Icon(Icons.Outlined.Add, stringResource(R.string.budget_book_add_transaction))
-            }
-        }
-    }
-    if (showEditor) {
-        TransactionEditor(
-            initialTitle = editingTitle,
-            onDismiss = { showEditor = false },
-        )
-    }
-}
-
-@Composable
-private fun MonthCalendar(month: YearMonth, compact: Boolean) {
-    val days = remember(month) { calendarDays(month) }
-    val cellHeight = if (compact) 42.dp else 72.dp
-    Row(modifier = Modifier.fillMaxWidth()) {
-        listOf(
-            R.string.weekday_sunday,
-            R.string.weekday_monday,
-            R.string.weekday_tuesday,
-            R.string.weekday_wednesday,
-            R.string.weekday_thursday,
-            R.string.weekday_friday,
-            R.string.weekday_saturday,
-        ).forEach { day ->
-            Text(
-                stringResource(day),
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            MonthSelector(month, onMonthChange)
+            Spacer(Modifier.height(8.dp))
+            MonthCalendar(
+                month = month,
+                compact = false,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                fillAvailableHeight = true,
             )
         }
     }
-    days.chunked(7).forEach { week ->
+}
+
+@Composable
+private fun MonthCalendar(
+    month: YearMonth,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
+    fillAvailableHeight: Boolean = false,
+) {
+    val days = remember(month) { calendarDays(month) }
+    val cellHeight = if (compact) 42.dp else 72.dp
+    Column(modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            week.forEach { date -> CalendarDay(date, cellHeight, compact) }
+            listOf(
+                R.string.weekday_sunday,
+                R.string.weekday_monday,
+                R.string.weekday_tuesday,
+                R.string.weekday_wednesday,
+                R.string.weekday_thursday,
+                R.string.weekday_friday,
+                R.string.weekday_saturday,
+            ).forEach { day ->
+                Text(
+                    stringResource(day),
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
+        }
+        days.chunked(7).forEach { week ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (fillAvailableHeight) Modifier.weight(1f) else Modifier),
+            ) {
+                week.forEach { date -> CalendarDay(date, cellHeight, compact, fillAvailableHeight) }
+            }
         }
     }
 }
 
 @Composable
-private fun RowScope.CalendarDay(date: LocalDate?, height: Dp, compact: Boolean) {
+private fun RowScope.CalendarDay(date: LocalDate?, height: Dp, compact: Boolean, fillAvailableHeight: Boolean) {
     Column(
-        modifier = Modifier.weight(1f).height(height).padding(top = 5.dp),
+        modifier =
+            Modifier
+                .weight(1f)
+                .then(if (fillAvailableHeight) Modifier.fillMaxHeight() else Modifier.height(height))
+                .padding(top = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (date != null) {
@@ -325,62 +268,6 @@ private fun PreviousMonthRow(month: YearMonth, income: Int, expense: Int, onClic
         Text(stringResource(R.string.budget_book_expense_amount, expense.withComma()), fontWeight = FontWeight.SemiBold)
         Icon(Icons.Outlined.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-@Composable
-private fun TransactionEntry(transaction: LedgerTransaction, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(38.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(modifier = Modifier.size(9.dp).background(SmartBudgetGreen, CircleShape))
-        }
-        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(stringResource(transaction.title), fontWeight = FontWeight.SemiBold)
-            Text(
-                stringResource(transaction.category),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-            )
-        }
-        Text(transaction.amount, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
-private fun TransactionEditor(initialTitle: String, onDismiss: () -> Unit) {
-    var title by rememberSaveable(initialTitle) { mutableStateOf(initialTitle) }
-    var amount by rememberSaveable { mutableStateOf("") }
-    val titleResource =
-        if (initialTitle.isBlank()) {
-            R.string.budget_book_add_transaction
-        } else {
-            R.string.budget_book_edit_transaction
-        }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(titleResource)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(title, {
-                    title = it
-                }, label = { Text(stringResource(R.string.budget_book_transaction_name)) }, singleLine = true)
-                OutlinedTextField(
-                    amount,
-                    { amount = it.filter(Char::isDigit) },
-                    label = { Text(stringResource(R.string.budget_book_amount)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                )
-            }
-        },
-        confirmButton = { Button(onClick = onDismiss) { Text(stringResource(R.string.budget_book_save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.budget_book_cancel)) } },
-    )
 }
 
 @Composable
