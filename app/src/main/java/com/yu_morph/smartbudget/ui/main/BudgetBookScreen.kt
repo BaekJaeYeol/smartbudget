@@ -775,6 +775,7 @@ private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int, onAd
             modifier =
                 Modifier
                     .size(actionHeight)
+                    .clip(CircleShape)
                     .background(badgeColor, CircleShape)
                     .clickable(onClick = onAdd),
             contentAlignment = Alignment.Center,
@@ -799,7 +800,7 @@ private fun SwipeableTransactionRow(
     Box(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.matchParentSize(),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TransactionActionButton(
@@ -850,13 +851,16 @@ private fun TransactionActionButton(
     color: Color,
     onClick: () -> Unit,
 ) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.padding(
-            horizontal = 3.dp,
-        ).size(42.dp).background(color.copy(alpha = 0.14f), RoundedCornerShape(12.dp)),
+    Box(
+        modifier =
+            Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(color.copy(alpha = 0.14f))
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription, tint = color)
+        Icon(icon, contentDescription, modifier = Modifier.size(18.dp), tint = color)
     }
 }
 
