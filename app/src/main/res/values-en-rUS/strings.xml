@@ -192,7 +192,7 @@
     <string name="budget_book_back">Back to ledger overview</string>
     <string name="budget_book_previous_month">Previous month</string>
     <string name="budget_book_next_month">Next month</string>
-    <string name="budget_book_select_month">Select year and month</string>
+    <string name="budget_book_select_month">Select ledger period</string>
     <string name="budget_book_previous_year">Previous year</string>
     <string name="budget_book_next_year">Next year</string>
     <string name="budget_book_total">Total</string>

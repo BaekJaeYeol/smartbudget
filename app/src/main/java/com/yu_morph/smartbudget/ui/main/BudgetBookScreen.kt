@@ -63,6 +63,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -510,6 +511,7 @@ private fun MonthSelector(month: YearMonth, onMonthChange: (YearMonth) -> Unit, 
             text = monthTitle(month),
             modifier =
                 Modifier
+                    .clip(RoundedCornerShape(12.dp))
                     .then(if (onTitleClick == null) Modifier else Modifier.clickable(onClick = onTitleClick))
                     .padding(horizontal = 16.dp, vertical = 10.dp),
             fontSize = 14.sp,
