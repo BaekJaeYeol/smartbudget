@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,13 +41,13 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.SettingsBrightness
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -480,20 +481,26 @@ private fun BudgetEditDialog(
                     suffix = { Text(stringResource(R.string.settings_won)) },
                     keyboardType = KeyboardType.Number,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(500_000, 1_000_000, 2_000_000).forEach { preset ->
-                        BudgetPresetButton(
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    val presets = listOf(500_000, 1_000_000, 2_000_000)
+                    presets.forEachIndexed { index, preset ->
+                        BudgetSegmentedButton(
                             text = stringResource(R.string.settings_budget_quick_amount, preset / 10_000),
                             onClick = { updateAmount(preset) },
+                            index = index,
+                            count = presets.size,
                             modifier = Modifier.weight(1f),
                         )
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    listOf(-1_000_000, -100_000, -10_000, 10_000, 100_000, 1_000_000).forEach { delta ->
-                        BudgetAdjustmentButton(
-                            delta = delta,
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    val adjustments = listOf(-1_000_000, -100_000, -10_000, 10_000, 100_000, 1_000_000)
+                    adjustments.forEachIndexed { index, delta ->
+                        BudgetSegmentedButton(
+                            text = budgetAdjustmentLabel(delta),
                             onClick = { updateAmount((amount ?: 0) + delta) },
+                            index = index,
+                            count = adjustments.size,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -510,30 +517,41 @@ private fun BudgetEditDialog(
 }
 
 @Composable
-private fun BudgetAdjustmentButton(delta: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedButton(
+private fun BudgetSegmentedButton(
+    text: String,
+    onClick: () -> Unit,
+    index: Int,
+    count: Int,
+    modifier: Modifier = Modifier,
+) {
+    val shape =
+        when (index) {
+            0 -> RoundedCornerShape(topStart = 9.dp, bottomStart = 9.dp)
+            count - 1 -> RoundedCornerShape(topEnd = 9.dp, bottomEnd = 9.dp)
+            else -> RoundedCornerShape(0.dp)
+        }
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Button(
         onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.height(38.dp),
+        shape = shape,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = if (isDark) Color(0xFF363636) else Color(0xFFECEDEF),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
         contentPadding = PaddingValues(horizontal = 1.dp, vertical = 0.dp),
     ) {
-        Text(
-            text =
-                stringResource(
-                    if (delta <
-                        0
-                    ) {
-                        R.string.settings_budget_adjust_decrease
-                    } else {
-                        R.string.settings_budget_adjust_increase
-                    },
-                    kotlin.math.abs(delta) / 10_000,
-                ),
-            fontSize = 10.sp,
-            maxLines = 1,
-        )
+        Text(text = text, fontSize = 10.sp, maxLines = 1)
     }
 }
+
+@Composable
+private fun budgetAdjustmentLabel(delta: Int): String = stringResource(
+    if (delta < 0) R.string.settings_budget_adjust_decrease else R.string.settings_budget_adjust_increase,
+    kotlin.math.abs(delta) / 10_000,
+)
 
 internal fun formatCompactBudget(amount: Int, language: String = Locale.getDefault().language): String {
     val formatter = DecimalFormat("0.#", DecimalFormatSymbols(Locale.US))
@@ -693,23 +711,6 @@ private fun SettingsColumn(modifier: Modifier, content: @Composable ColumnScope.
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
-}
-
-@Composable
-private fun BudgetPresetButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(9.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        colors =
-            ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = SmartBudgetGreen,
-            ),
-    ) {
-        Text(text)
-    }
 }
 
 @Composable
