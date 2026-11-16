@@ -28,12 +28,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.AlertDialog
@@ -73,6 +75,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,8 +87,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
-private val CalendarIncomeColor = Color(0xFF3278C7)
-private val CalendarExpenseColor = Color(0xFFD94A4A)
+private val CalendarIncomeColor = Color(0xFFD94A4A)
+private val CalendarExpenseColor = Color(0xFF3278C7)
 private val CalendarTransferColor = Color(0xFF4B88D8)
 private val CalendarSundayColor = Color(0xFFD94A4A)
 private val CalendarSaturdayColor = Color(0xFF3278C7)
@@ -638,11 +641,7 @@ private fun MonthPickerDialog(selectedMonth: YearMonth, onSelect: (YearMonth) ->
 private fun DailyTransactionsSheet(date: LocalDate, transactions: List<TransactionData>, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
-            Text(
-                text = stringResource(R.string.full_date, date.year, date.monthValue, date.dayOfMonth),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            DailyTransactionsHeader(date = date, transactionCount = transactions.size)
             Spacer(Modifier.height(12.dp))
             if (transactions.isEmpty()) {
                 Text(
@@ -664,8 +663,55 @@ private fun DailyTransactionsSheet(date: LocalDate, transactions: List<Transacti
 }
 
 @Composable
+private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int) {
+    val badgeColor = calendarMutedBackground()
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.full_date, date.year, date.monthValue, date.dayOfMonth),
+            modifier = Modifier.weight(1f),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Surface(shape = RoundedCornerShape(16.dp), color = badgeColor) {
+            Text(
+                text = stringResource(R.string.budget_book_transaction_count, transactionCount),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        IconButton(
+            onClick = {},
+            modifier = Modifier.size(34.dp).background(badgeColor, CircleShape),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Add,
+                contentDescription = stringResource(R.string.budget_book_add_transaction),
+                modifier = Modifier.size(19.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun DailyTransactionRow(transaction: TransactionData) {
     val isIncome = transaction.type == TransactionType.INCOME
+    val category = transactionCategoryUi(transaction.category)
+    val categoryName = stringResource(category.label)
+    val sourceOrPlace =
+        transaction.storeName?.takeIf(String::isNotBlank)
+            ?: stringResource(
+                if (isIncome) {
+                    R.string.budget_book_unknown_income_source
+                } else {
+                    R.string.budget_book_unknown_expense_place
+                },
+            )
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -675,26 +721,48 @@ private fun DailyTransactionRow(transaction: TransactionData) {
                 Modifier
                     .size(38.dp)
                     .background(
-                        (if (isIncome) CalendarIncomeColor else CalendarExpenseColor).copy(alpha = 0.12f),
+                        category.color.copy(alpha = 0.14f),
                         RoundedCornerShape(12.dp),
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                Modifier
-                    .size(9.dp)
-                    .background(if (isIncome) CalendarIncomeColor else CalendarExpenseColor, CircleShape),
+            Icon(
+                imageVector = category.icon,
+                contentDescription = categoryName,
+                modifier = Modifier.size(21.dp),
+                tint = category.color,
             )
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-            Text(transaction.storeName ?: transaction.category, fontWeight = FontWeight.SemiBold)
-            Text(transaction.category, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Text(categoryName, fontWeight = FontWeight.SemiBold)
+            transaction.note?.takeIf(String::isNotBlank)?.let { note ->
+                Text(
+                    text = note,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Text(
-            text = (if (isIncome) "+" else "-") + transaction.amount.withComma(),
-            color = if (isIncome) CalendarIncomeColor else CalendarExpenseColor,
-            fontWeight = FontWeight.SemiBold,
-        )
+        Column(modifier = Modifier.widthIn(max = 140.dp), horizontalAlignment = Alignment.End) {
+            Text(
+                text =
+                    stringResource(
+                        R.string.budget_book_currency_amount,
+                        (if (isIncome) "+" else "-") + transaction.amount.withComma(),
+                    ),
+                color = if (isIncome) CalendarIncomeColor else CalendarExpenseColor,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = sourceOrPlace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
