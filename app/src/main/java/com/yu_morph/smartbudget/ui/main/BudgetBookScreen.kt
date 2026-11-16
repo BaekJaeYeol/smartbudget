@@ -741,6 +741,7 @@ private fun DailyTransactionsSheet(
 @Composable
 private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int, onAdd: () -> Unit) {
     val badgeColor = calendarMutedBackground()
+    val actionHeight = 30.dp
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -752,19 +753,31 @@ private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int, onAd
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
         )
-        Surface(shape = RoundedCornerShape(16.dp), color = badgeColor) {
-            Text(
-                text = stringResource(R.string.budget_book_transaction_count, transactionCount),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
+        Surface(
+            modifier = Modifier.height(actionHeight),
+            shape = RoundedCornerShape(actionHeight / 2),
+            color = badgeColor,
+        ) {
+            Box(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.budget_book_transaction_count, transactionCount),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
         }
         Spacer(Modifier.width(2.dp))
-        IconButton(
-            onClick = onAdd,
-            modifier = Modifier.size(30.dp).background(badgeColor, CircleShape),
+        Box(
+            modifier =
+                Modifier
+                    .size(actionHeight)
+                    .background(badgeColor, CircleShape)
+                    .clickable(onClick = onAdd),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Outlined.Add,
