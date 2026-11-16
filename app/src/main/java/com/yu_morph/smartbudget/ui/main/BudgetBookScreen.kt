@@ -3,6 +3,13 @@
 package com.yu_morph.smartbudget.ui.main
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +63,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
@@ -80,6 +89,7 @@ private val CalendarTransferColor = Color(0xFF4B88D8)
 private val CalendarSundayColor = Color(0xFFD94A4A)
 private val CalendarSaturdayColor = Color(0xFF3278C7)
 private const val MONTH_SWIPE_THRESHOLD = 72f
+private const val MONTH_TRANSITION_DURATION_MILLIS = 240
 
 @Composable
 internal fun BudgetBookRoute(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Unit) =
@@ -187,22 +197,39 @@ internal fun BudgetBookDetailScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 MonthSelector(month, onMonthChange, onTitleClick = { showMonthPicker = true })
                 MonthSummary(transactions)
-                MonthCalendar(
-                    month = month,
-                    compact = false,
-                    transactionsByDate = transactionsByDate,
-                    selectedDate = selectedDate,
-                    onDateClick = { date ->
-                        if (YearMonth.from(date) == month) {
-                            selectedDateText = date.toString()
-                        } else {
-                            onMonthChange(YearMonth.from(date))
-                        }
-                    },
-                    onSwipeMonth = onMonthChange,
+                AnimatedContent(
+                    targetState = month,
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    fillAvailableHeight = true,
-                )
+                    transitionSpec = {
+                        val direction = if (targetState > initialState) 1 else -1
+                        (
+                            slideInHorizontally(tween(MONTH_TRANSITION_DURATION_MILLIS)) { it * direction } +
+                                fadeIn(tween(MONTH_TRANSITION_DURATION_MILLIS))
+                            ) togetherWith
+                            (
+                                slideOutHorizontally(tween(MONTH_TRANSITION_DURATION_MILLIS)) { -it * direction } +
+                                    fadeOut(tween(MONTH_TRANSITION_DURATION_MILLIS))
+                                )
+                    },
+                    label = "가계부 월 전환",
+                ) { displayedMonth ->
+                    MonthCalendar(
+                        month = displayedMonth,
+                        compact = false,
+                        transactionsByDate = if (displayedMonth == month) transactionsByDate else emptyMap(),
+                        selectedDate = selectedDate?.takeIf { YearMonth.from(it) == displayedMonth },
+                        onDateClick = { date ->
+                            if (YearMonth.from(date) == displayedMonth) {
+                                selectedDateText = date.toString()
+                            } else {
+                                onMonthChange(YearMonth.from(date))
+                            }
+                        },
+                        onSwipeMonth = onMonthChange,
+                        modifier = Modifier.fillMaxSize(),
+                        fillAvailableHeight = true,
+                    )
+                }
             }
             if (state.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -274,7 +301,7 @@ private fun MonthCalendar(
                 Modifier
                     .fillMaxWidth()
                     .background(if (compact) Color.Transparent else mutedBackground)
-                    .padding(vertical = if (compact) 0.dp else 7.dp),
+                    .padding(vertical = if (compact) 0.dp else 2.dp),
         ) {
             listOf(
                 R.string.weekday_sunday,
@@ -284,12 +311,18 @@ private fun MonthCalendar(
                 R.string.weekday_thursday,
                 R.string.weekday_friday,
                 R.string.weekday_saturday,
-            ).forEach { day ->
+            ).forEachIndexed { index, day ->
                 Text(
                     stringResource(day),
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color =
+                        when (index) {
+                            0 -> CalendarSundayColor
+                            6 -> CalendarSaturdayColor
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     fontSize = 12.sp,
+                    lineHeight = 14.sp,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -371,11 +404,26 @@ private fun Modifier.calendarCellStyle(
     val borderedModifier =
         if (compact) {
             Modifier
+        } else if (isSelected) {
+            Modifier.border(width = 1.5.dp, color = SmartBudgetGreen)
         } else {
-            Modifier.border(
-                width = if (isSelected) 1.5.dp else 0.5.dp,
-                color = if (isSelected) SmartBudgetGreen else borderColor,
-            )
+            Modifier.drawBehind {
+                val strokeWidth = 0.5.dp.toPx()
+                val verticalX = size.width - strokeWidth / 2
+                val horizontalY = size.height - strokeWidth / 2
+                drawLine(
+                    color = borderColor,
+                    start = Offset(verticalX, 0f),
+                    end = Offset(verticalX, size.height),
+                    strokeWidth = strokeWidth,
+                )
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, horizontalY),
+                    end = Offset(size.width, horizontalY),
+                    strokeWidth = strokeWidth,
+                )
+            }
         }
     val backgroundColor = when {
         isSelected -> SmartBudgetGreen.copy(alpha = 0.1f)
@@ -388,16 +436,15 @@ private fun Modifier.calendarCellStyle(
 @Composable
 private fun CalendarDateLabel(date: LocalDate, compact: Boolean, isOutsideMonth: Boolean) {
     val isToday = date == LocalDate.now()
-    Row(
+    Box(
         modifier =
             Modifier
-                .then(if (compact) Modifier else Modifier.fillMaxWidth())
+                .size(if (compact) 24.dp else 26.dp)
                 .background(
                     if (isToday) SmartBudgetGreen else Color.Transparent,
-                    RoundedCornerShape(6.dp),
-                )
-                .padding(horizontal = if (compact) 5.dp else 6.dp, vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                    CircleShape,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             date.dayOfMonth.toString(),
@@ -464,8 +511,8 @@ private fun MonthSelector(month: YearMonth, onMonthChange: (YearMonth) -> Unit, 
                 Modifier
                     .then(if (onTitleClick == null) Modifier else Modifier.clickable(onClick = onTitleClick))
                     .padding(horizontal = 16.dp, vertical = 10.dp),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
         )
         IconButton(onClick = { onMonthChange(month.plusMonths(1)) }) {
             Icon(Icons.Outlined.ChevronRight, stringResource(R.string.budget_book_next_month))
@@ -513,7 +560,11 @@ private fun SummaryAmount(label: String, amount: Int, color: Color, modifier: Mo
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         Text(
-            text = if (signed) amount.withSignedComma() else amount.withComma(),
+            text =
+                stringResource(
+                    R.string.budget_book_currency_amount,
+                    if (signed) amount.withSignedComma() else amount.withComma(),
+                ),
             color = color,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,

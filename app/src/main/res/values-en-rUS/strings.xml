@@ -196,6 +196,7 @@
     <string name="budget_book_previous_year">Previous year</string>
     <string name="budget_book_next_year">Next year</string>
     <string name="budget_book_total">Total</string>
+    <string name="budget_book_currency_amount">%1$s￦</string>
     <string name="budget_book_no_transactions">There are no transactions on this date.</string>
     <string name="full_date">%2$d/%3$d/%1$d</string>
     <string name="budget_book_income_amount">Income ₩%1$s</string>

@@ -196,6 +196,7 @@
     <string name="budget_book_previous_year">이전 연도</string>
     <string name="budget_book_next_year">다음 연도</string>
     <string name="budget_book_total">합계</string>
+    <string name="budget_book_currency_amount">%1$s원</string>
     <string name="budget_book_no_transactions">이 날짜에는 거래내역이 없습니다.</string>
     <string name="full_date">%1$d년 %2$d월 %3$d일</string>
     <string name="budget_book_income_amount">수입 %1$s원</string>
