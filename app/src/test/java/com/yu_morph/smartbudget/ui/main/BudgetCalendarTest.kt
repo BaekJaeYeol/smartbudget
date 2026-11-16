@@ -34,4 +34,10 @@ class BudgetCalendarTest {
 
         assertTrue(days.size % 7 == 0)
     }
+
+    @Test
+    fun `큰 금액은 앱 언어에 맞는 짧은 단위로 표시한다`() {
+        assertEquals("+3백만", formatCalendarAmount(3_676_400, "ko-KR"))
+        assertEquals("-3M", formatCalendarAmount(-3_676_400, "en-US"))
+    }
 }

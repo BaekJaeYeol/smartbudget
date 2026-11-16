@@ -57,7 +57,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -189,6 +191,7 @@ internal fun BudgetBookDetailScreen(
                     month = month,
                     compact = false,
                     transactionsByDate = transactionsByDate,
+                    selectedDate = selectedDate,
                     onDateClick = { date ->
                         if (YearMonth.from(date) == month) {
                             selectedDateText = date.toString()
@@ -234,11 +237,14 @@ private fun MonthCalendar(
     modifier: Modifier = Modifier,
     fillAvailableHeight: Boolean = false,
     transactionsByDate: Map<LocalDate, List<TransactionData>> = emptyMap(),
+    selectedDate: LocalDate? = null,
     onDateClick: ((LocalDate) -> Unit)? = null,
     onSwipeMonth: ((YearMonth) -> Unit)? = null,
 ) {
     val days = remember(month) { calendarDays(month) }
     val cellHeight = if (compact) 42.dp else 72.dp
+    val mutedBackground = calendarMutedBackground()
+    val borderColor = calendarBorderColor()
     var horizontalDrag by remember { mutableFloatStateOf(0f) }
     val swipeModifier =
         if (onSwipeMonth == null) {
@@ -263,7 +269,13 @@ private fun MonthCalendar(
             }
         }
     Column(modifier = modifier.then(swipeModifier)) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(if (compact) Color.Transparent else mutedBackground)
+                    .padding(vertical = if (compact) 0.dp else 7.dp),
+        ) {
             listOf(
                 R.string.weekday_sunday,
                 R.string.weekday_monday,
@@ -294,6 +306,9 @@ private fun MonthCalendar(
                         date = date,
                         displayedMonth = month,
                         transactions = transactionsByDate[date].orEmpty(),
+                        isSelected = date == selectedDate,
+                        mutedBackground = mutedBackground,
+                        borderColor = borderColor,
                         height = cellHeight,
                         compact = compact,
                         fillAvailableHeight = fillAvailableHeight,
@@ -310,52 +325,86 @@ private fun RowScope.CalendarDay(
     date: LocalDate,
     displayedMonth: YearMonth,
     transactions: List<TransactionData>,
+    isSelected: Boolean,
+    mutedBackground: Color,
+    borderColor: Color,
     height: Dp,
     compact: Boolean,
     fillAvailableHeight: Boolean,
     onClick: ((LocalDate) -> Unit)?,
 ) {
     val isOutsideMonth = YearMonth.from(date) != displayedMonth
-    val backgroundColor =
-        if (isOutsideMonth && !compact) {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f)
-        } else {
-            Color.Transparent
-        }
     val interactionModifier = if (onClick == null) Modifier else Modifier.clickable { onClick(date) }
     Column(
         modifier =
             Modifier
                 .weight(1f)
-                .then(if (fillAvailableHeight) Modifier.fillMaxHeight() else Modifier.height(height))
-                .then(
-                    if (compact) {
-                        Modifier
-                    } else {
-                        Modifier.border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
-                    },
+                .calendarCellStyle(
+                    height = height,
+                    fillAvailableHeight = fillAvailableHeight,
+                    compact = compact,
+                    isOutsideMonth = isOutsideMonth,
+                    isSelected = isSelected,
+                    mutedBackground = mutedBackground,
+                    borderColor = borderColor,
                 )
-                .background(backgroundColor)
                 .then(interactionModifier)
-                .padding(top = 5.dp, start = 3.dp, end = 3.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.Start,
     ) {
-        val isToday = date == LocalDate.now()
-        Box(
-            modifier =
-                Modifier
-                    .size(if (compact) 24.dp else 28.dp)
-                    .background(if (isToday) SmartBudgetGreen else Color.Transparent, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                date.dayOfMonth.toString(),
-                color = calendarDayTextColor(date, isToday, isOutsideMonth),
-                fontSize = 12.sp,
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+        CalendarDateLabel(date, compact, isOutsideMonth)
+        if (!compact) Spacer(Modifier.weight(1f))
+        if (!compact && !isOutsideMonth) DailyAmounts(transactions)
+    }
+}
+
+private fun Modifier.calendarCellStyle(
+    height: Dp,
+    fillAvailableHeight: Boolean,
+    compact: Boolean,
+    isOutsideMonth: Boolean,
+    isSelected: Boolean,
+    mutedBackground: Color,
+    borderColor: Color,
+): Modifier {
+    val sizedModifier = if (fillAvailableHeight) Modifier.fillMaxHeight() else Modifier.height(height)
+    val borderedModifier =
+        if (compact) {
+            Modifier
+        } else {
+            Modifier.border(
+                width = if (isSelected) 1.5.dp else 0.5.dp,
+                color = if (isSelected) SmartBudgetGreen else borderColor,
             )
         }
-        if (!compact && !isOutsideMonth) DailyAmounts(transactions)
+    val backgroundColor = when {
+        isSelected -> SmartBudgetGreen.copy(alpha = 0.1f)
+        isOutsideMonth && !compact -> mutedBackground
+        else -> Color.Transparent
+    }
+    return then(sizedModifier).then(borderedModifier).background(backgroundColor)
+}
+
+@Composable
+private fun CalendarDateLabel(date: LocalDate, compact: Boolean, isOutsideMonth: Boolean) {
+    val isToday = date == LocalDate.now()
+    Row(
+        modifier =
+            Modifier
+                .then(if (compact) Modifier else Modifier.fillMaxWidth())
+                .background(
+                    if (isToday) SmartBudgetGreen else Color.Transparent,
+                    RoundedCornerShape(6.dp),
+                )
+                .padding(horizontal = if (compact) 5.dp else 6.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            date.dayOfMonth.toString(),
+            color = calendarDayTextColor(date, isToday, isOutsideMonth),
+            fontSize = 12.sp,
+            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+        )
     }
 }
 
@@ -375,10 +424,13 @@ private fun calendarDayTextColor(date: LocalDate, isToday: Boolean, isOutsideMon
 private fun DailyAmounts(transactions: List<TransactionData>) {
     val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf(TransactionData::amount)
     val expense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf(TransactionData::amount)
-    if (income > 0) AmountLabel("+${income.withComma()}", CalendarIncomeColor)
-    if (expense > 0) AmountLabel("-${expense.withComma()}", CalendarExpenseColor)
-    if (income > 0 && expense > 0) {
-        AmountLabel((income - expense).withSignedComma(), MaterialTheme.colorScheme.onSurface)
+    val languageTag = LocalConfiguration.current.locales[0].toLanguageTag()
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+        if (income > 0) AmountLabel(formatCalendarAmount(income, languageTag), CalendarIncomeColor)
+        if (expense > 0) AmountLabel(formatCalendarAmount(-expense, languageTag), CalendarExpenseColor)
+        if (income > 0 && expense > 0) {
+            AmountLabel(formatCalendarAmount(income - expense, languageTag), MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
@@ -425,29 +477,34 @@ private fun MonthSelector(month: YearMonth, onMonthChange: (YearMonth) -> Unit, 
 private fun MonthSummary(transactions: List<TransactionData>) {
     val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf(TransactionData::amount)
     val expense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf(TransactionData::amount)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SummaryAmount(
-            label = stringResource(R.string.budget_book_income),
-            amount = income,
-            color = CalendarIncomeColor,
-            modifier = Modifier.weight(1f),
-        )
-        SummaryAmount(
-            label = stringResource(R.string.budget_book_expense),
-            amount = expense,
-            color = CalendarExpenseColor,
-            modifier = Modifier.weight(1f),
-        )
-        SummaryAmount(
-            label = stringResource(R.string.budget_book_total),
-            amount = income - expense,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-            signed = true,
-        )
+    val borderColor = calendarBorderColor()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(thickness = 0.5.dp, color = borderColor)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SummaryAmount(
+                label = stringResource(R.string.budget_book_income),
+                amount = income,
+                color = CalendarIncomeColor,
+                modifier = Modifier.weight(1f),
+            )
+            SummaryAmount(
+                label = stringResource(R.string.budget_book_expense),
+                amount = expense,
+                color = CalendarExpenseColor,
+                modifier = Modifier.weight(1f),
+            )
+            SummaryAmount(
+                label = stringResource(R.string.budget_book_total),
+                amount = income - expense,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                signed = true,
+            )
+        }
+        HorizontalDivider(thickness = 0.5.dp, color = borderColor)
     }
 }
 
@@ -468,6 +525,7 @@ private fun SummaryAmount(label: String, amount: Int, color: Color, modifier: Mo
 @Composable
 private fun MonthPickerDialog(selectedMonth: YearMonth, onSelect: (YearMonth) -> Unit, onDismiss: () -> Unit) {
     var selectedYear by rememberSaveable(selectedMonth) { mutableIntStateOf(selectedMonth.year) }
+    val unselectedColor = calendarMutedBackground()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.budget_book_select_month)) },
@@ -502,7 +560,7 @@ private fun MonthPickerDialog(selectedMonth: YearMonth, onSelect: (YearMonth) ->
                                     if (isSelected) {
                                         SmartBudgetGreen
                                     } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
+                                        unselectedColor
                                     },
                             ) {
                                 Text(
@@ -640,3 +698,37 @@ private fun monthTitle(month: YearMonth): String = stringResource(R.string.year_
 private fun Int.withComma(): String = String.format("%,d", this)
 
 private fun Int.withSignedComma(): String = if (this > 0) "+${withComma()}" else withComma()
+
+internal fun formatCalendarAmount(amount: Int, languageTag: String): String {
+    val absoluteAmount = kotlin.math.abs(amount.toLong())
+    val sign = when {
+        amount > 0 -> "+"
+        amount < 0 -> "-"
+        else -> ""
+    }
+    val value =
+        if (languageTag.startsWith("ko")) {
+            when {
+                absoluteAmount >= 100_000_000 -> "${absoluteAmount / 100_000_000}억"
+                absoluteAmount >= 1_000_000 -> "${absoluteAmount / 1_000_000}백만"
+                absoluteAmount >= 10_000 -> "${absoluteAmount / 10_000}만"
+                absoluteAmount >= 1_000 -> "${absoluteAmount / 1_000}천"
+                else -> absoluteAmount.toString()
+            }
+        } else {
+            when {
+                absoluteAmount >= 1_000_000 -> "${absoluteAmount / 1_000_000}M"
+                absoluteAmount >= 1_000 -> "${absoluteAmount / 1_000}K"
+                else -> absoluteAmount.toString()
+            }
+        }
+    return "$sign$value"
+}
+
+@Composable
+private fun calendarMutedBackground(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color(0xFFF3F3F3) else Color(0xFF252525)
+
+@Composable
+private fun calendarBorderColor(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color(0xFFECECEC) else Color(0xFF343434)
