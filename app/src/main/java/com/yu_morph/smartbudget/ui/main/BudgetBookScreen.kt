@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -729,7 +728,7 @@ private fun DailyTransactionsSheet(
                     itemsIndexed(transactions, key = { _, transaction -> transaction.id }) { index, transaction ->
                         SwipeableTransactionRow(transaction = transaction, onEdit = onEdit, onDelete = onDelete)
                         if (index < transactions.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                         }
                     }
                 }
@@ -770,7 +769,6 @@ private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int, onAd
                 )
             }
         }
-        Spacer(Modifier.width(2.dp))
         Box(
             modifier =
                 Modifier
@@ -900,9 +898,9 @@ private fun DailyTransactionRow(transaction: TransactionData) {
             )
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-            Text(categoryName, fontWeight = FontWeight.SemiBold)
+            Text(sourceOrPlace, fontWeight = FontWeight.SemiBold)
             Text(
-                text = sourceOrPlace,
+                text = categoryName,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 maxLines = 1,
