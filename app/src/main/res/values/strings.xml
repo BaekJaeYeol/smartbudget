@@ -199,7 +199,8 @@
     <string name="budget_book_currency_amount">%1$s원</string>
     <string name="budget_book_no_transactions">이 날짜에는 가계부 항목이 없습니다.</string>
     <string name="budget_book_delete_transaction">내역 삭제</string>
-    <string name="budget_book_delete_confirm_title">가계부 항목을 삭제할까요?</string>
+    <string name="budget_book_delete_action">삭제</string>
+    <string name="budget_book_delete_confirm_title">가계부 항목 삭제</string>
     <string name="budget_book_delete_confirm_message">삭제한 가계부 항목은 복구할 수 없습니다.</string>
     <string name="budget_book_editor_category">카테고리</string>
     <string name="budget_book_editor_source_place">수입 출처 또는 지출 장소</string>

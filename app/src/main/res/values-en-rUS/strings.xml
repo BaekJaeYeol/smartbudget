@@ -199,7 +199,8 @@
     <string name="budget_book_currency_amount">%1$s￦</string>
     <string name="budget_book_no_transactions">There are no ledger entries on this date.</string>
     <string name="budget_book_delete_transaction">Delete entry</string>
-    <string name="budget_book_delete_confirm_title">Delete this ledger entry?</string>
+    <string name="budget_book_delete_action">Delete</string>
+    <string name="budget_book_delete_confirm_title">Delete ledger entry</string>
     <string name="budget_book_delete_confirm_message">A deleted ledger entry cannot be restored.</string>
     <string name="budget_book_editor_category">Category</string>
     <string name="budget_book_editor_source_place">Income source or expense place</string>

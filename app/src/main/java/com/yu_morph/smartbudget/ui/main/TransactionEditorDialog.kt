@@ -260,11 +260,16 @@ internal fun DeleteTransactionDialog(isDeleting: Boolean, onDismiss: () -> Unit,
         text = { Text(stringResource(R.string.budget_book_delete_confirm_message)) },
         confirmButton = {
             TextButton(onClick = onConfirm, enabled = !isDeleting) {
-                Text(stringResource(R.string.budget_book_delete_transaction), color = Color(0xFFD94A4A))
+                Text(stringResource(R.string.budget_book_delete_action), color = Color(0xFFD94A4A))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isDeleting) { Text(stringResource(R.string.budget_book_cancel)) }
+            TextButton(onClick = onDismiss, enabled = !isDeleting) {
+                Text(
+                    stringResource(R.string.budget_book_cancel),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         },
     )
 }
