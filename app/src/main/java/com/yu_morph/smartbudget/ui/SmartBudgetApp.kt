@@ -154,6 +154,9 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                         month = YearMonth.parse(month),
                         state = budgetBookCoordinator.state,
                         onLoadMonth = budgetBookCoordinator::loadMonth,
+                        onCreateTransaction = budgetBookCoordinator::createTransaction,
+                        onUpdateTransaction = budgetBookCoordinator::updateTransaction,
+                        onDeleteTransaction = budgetBookCoordinator::deleteTransaction,
                         onMonthChange = { changedMonth -> openBudgetBookMonth = changedMonth.toString() },
                         onBack = { openBudgetBookMonth = null },
                     )

@@ -26,11 +26,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +40,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,20 +76,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.TransactionData
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
+import com.yu_morph.smartbudget.data.remote.model.UpdateTransactionRequest
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlin.math.roundToInt
 
 private val CalendarIncomeColor = Color(0xFFD94A4A)
 private val CalendarExpenseColor = Color(0xFF3278C7)
@@ -157,11 +166,17 @@ internal fun BudgetBookDetailScreen(
     month: YearMonth,
     state: BudgetBookUiState,
     onLoadMonth: (YearMonth) -> Unit,
+    onCreateTransaction: (CreateTransactionRequest, () -> Unit) -> Unit,
+    onUpdateTransaction: (Int, UpdateTransactionRequest, () -> Unit) -> Unit,
+    onDeleteTransaction: (Int, () -> Unit) -> Unit,
     onMonthChange: (YearMonth) -> Unit,
     onBack: () -> Unit,
 ) {
     var selectedDateText by rememberSaveable { mutableStateOf<String?>(null) }
     var showMonthPicker by rememberSaveable { mutableStateOf(false) }
+    var editorTransaction by remember { mutableStateOf<TransactionData?>(null) }
+    var showTransactionEditor by rememberSaveable { mutableStateOf(false) }
+    var deletingTransaction by remember { mutableStateOf<TransactionData?>(null) }
     val transactions = if (state.month == month) state.transactions else emptyList()
     val transactionsByDate = remember(transactions) { transactions.groupBy { LocalDate.parse(it.date) } }
     val selectedDate = selectedDateText?.let(LocalDate::parse)
@@ -256,7 +271,38 @@ internal fun BudgetBookDetailScreen(
         DailyTransactionsSheet(
             date = selectedDate,
             transactions = transactionsByDate[selectedDate].orEmpty(),
+            onAdd = {
+                editorTransaction = null
+                showTransactionEditor = true
+            },
+            onEdit = {
+                editorTransaction = it
+                showTransactionEditor = true
+            },
+            onDelete = { deletingTransaction = it },
             onDismiss = { selectedDateText = null },
+        )
+    }
+    if (showTransactionEditor && selectedDate != null) {
+        TransactionEditorDialog(
+            transaction = editorTransaction,
+            isSaving = state.isMutating,
+            onDismiss = { showTransactionEditor = false },
+            onSave = { value ->
+                val onSuccess = { showTransactionEditor = false }
+                editorTransaction?.let { transaction ->
+                    onUpdateTransaction(transaction.id, value.toUpdateRequest(selectedDate), onSuccess)
+                } ?: onCreateTransaction(value.toCreateRequest(selectedDate), onSuccess)
+            },
+        )
+    }
+    deletingTransaction?.let { transaction ->
+        DeleteTransactionDialog(
+            isDeleting = state.isMutating,
+            onDismiss = { deletingTransaction = null },
+            onConfirm = {
+                onDeleteTransaction(transaction.id) { deletingTransaction = null }
+            },
         )
     }
 }
@@ -391,8 +437,29 @@ private fun RowScope.CalendarDay(
         horizontalAlignment = Alignment.Start,
     ) {
         CalendarDateLabel(date, compact, isOutsideMonth)
+        if (!compact && !isOutsideMonth) CategoryIndicators(transactions)
         if (!compact) Spacer(Modifier.weight(1f))
         if (!compact && !isOutsideMonth) DailyAmounts(transactions)
+    }
+}
+
+@Composable
+private fun CategoryIndicators(transactions: List<TransactionData>) {
+    val categories = transactions.distinctBy(TransactionData::category)
+    if (categories.isNotEmpty()) {
+        Row(
+            modifier = Modifier.padding(start = 2.dp, top = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            categories.forEach { transaction ->
+                Box(
+                    modifier =
+                        Modifier
+                            .size(3.dp)
+                            .background(transactionCategoryUi(transaction.category).color, CircleShape),
+                )
+            }
+        }
     }
 }
 
@@ -638,10 +705,17 @@ private fun MonthPickerDialog(selectedMonth: YearMonth, onSelect: (YearMonth) ->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DailyTransactionsSheet(date: LocalDate, transactions: List<TransactionData>, onDismiss: () -> Unit) {
+private fun DailyTransactionsSheet(
+    date: LocalDate,
+    transactions: List<TransactionData>,
+    onAdd: () -> Unit,
+    onEdit: (TransactionData) -> Unit,
+    onDelete: (TransactionData) -> Unit,
+    onDismiss: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
-            DailyTransactionsHeader(date = date, transactionCount = transactions.size)
+            DailyTransactionsHeader(date = date, transactionCount = transactions.size, onAdd = onAdd)
             Spacer(Modifier.height(12.dp))
             if (transactions.isEmpty()) {
                 Text(
@@ -652,9 +726,11 @@ private fun DailyTransactionsSheet(date: LocalDate, transactions: List<Transacti
                 )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-                    items(transactions, key = TransactionData::id) { transaction ->
-                        DailyTransactionRow(transaction)
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                    itemsIndexed(transactions, key = { _, transaction -> transaction.id }) { index, transaction ->
+                        SwipeableTransactionRow(transaction = transaction, onEdit = onEdit, onDelete = onDelete)
+                        if (index < transactions.lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                        }
                     }
                 }
             }
@@ -663,7 +739,7 @@ private fun DailyTransactionsSheet(date: LocalDate, transactions: List<Transacti
 }
 
 @Composable
-private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int) {
+private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int, onAdd: () -> Unit) {
     val badgeColor = calendarMutedBackground()
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -685,16 +761,89 @@ private fun DailyTransactionsHeader(date: LocalDate, transactionCount: Int) {
                 fontWeight = FontWeight.SemiBold,
             )
         }
+        Spacer(Modifier.width(2.dp))
         IconButton(
-            onClick = {},
-            modifier = Modifier.size(34.dp).background(badgeColor, CircleShape),
+            onClick = onAdd,
+            modifier = Modifier.size(30.dp).background(badgeColor, CircleShape),
         ) {
             Icon(
                 imageVector = Icons.Outlined.Add,
                 contentDescription = stringResource(R.string.budget_book_add_transaction),
-                modifier = Modifier.size(19.dp),
+                modifier = Modifier.size(17.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun SwipeableTransactionRow(
+    transaction: TransactionData,
+    onEdit: (TransactionData) -> Unit,
+    onDelete: (TransactionData) -> Unit,
+) {
+    val revealWidth = with(LocalDensity.current) { 96.dp.toPx() }
+    var offset by remember(transaction.id) { mutableFloatStateOf(0f) }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.matchParentSize(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TransactionActionButton(
+                icon = Icons.Outlined.Edit,
+                contentDescription = stringResource(R.string.budget_book_edit_transaction),
+                color = SmartBudgetGreen,
+            ) {
+                offset = 0f
+                onEdit(transaction)
+            }
+            TransactionActionButton(
+                icon = Icons.Outlined.Delete,
+                contentDescription = stringResource(R.string.budget_book_delete_transaction),
+                color = CalendarIncomeColor,
+            ) {
+                offset = 0f
+                onDelete(transaction)
+            }
+        }
+        Surface(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .offset { IntOffset(offset.roundToInt(), 0) }
+                    .pointerInput(transaction.id) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                offset = (offset + dragAmount).coerceIn(-revealWidth, 0f)
+                            },
+                            onDragEnd = {
+                                offset = if (offset <= -revealWidth / 2) -revealWidth else 0f
+                            },
+                            onDragCancel = { offset = 0f },
+                        )
+                    },
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            DailyTransactionRow(transaction)
+        }
+    }
+}
+
+@Composable
+private fun TransactionActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    color: Color,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.padding(
+            horizontal = 3.dp,
+        ).size(42.dp).background(color.copy(alpha = 0.14f), RoundedCornerShape(12.dp)),
+    ) {
+        Icon(icon, contentDescription, tint = color)
     }
 }
 
@@ -735,34 +884,25 @@ private fun DailyTransactionRow(transaction: TransactionData) {
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
             Text(categoryName, fontWeight = FontWeight.SemiBold)
-            transaction.note?.takeIf(String::isNotBlank)?.let { note ->
-                Text(
-                    text = note,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        Column(modifier = Modifier.widthIn(max = 140.dp), horizontalAlignment = Alignment.End) {
-            Text(
-                text =
-                    stringResource(
-                        R.string.budget_book_currency_amount,
-                        (if (isIncome) "+" else "-") + transaction.amount.withComma(),
-                    ),
-                color = if (isIncome) CalendarIncomeColor else CalendarExpenseColor,
-                fontWeight = FontWeight.SemiBold,
-            )
             Text(
                 text = sourceOrPlace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        Text(
+            text =
+                stringResource(
+                    R.string.budget_book_currency_amount,
+                    (if (isIncome) "+" else "-") + transaction.amount.withComma(),
+                ),
+            modifier = Modifier.widthIn(max = 140.dp),
+            color = if (isIncome) CalendarIncomeColor else CalendarExpenseColor,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
     }
 }
 

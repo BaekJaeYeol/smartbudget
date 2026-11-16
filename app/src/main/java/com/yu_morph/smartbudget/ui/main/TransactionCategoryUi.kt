@@ -22,6 +22,10 @@ internal data class TransactionCategoryUi(@param:StringRes val label: Int, val i
 
 private val UnknownCategoryColor = Color(0xFF8A8A8A)
 
+internal val expenseTransactionCategoryCodes =
+    listOf("food", "transport", "shopping", "housing_utilities", "health", "leisure", "education", "other_expense")
+internal val incomeTransactionCategoryCodes = listOf("salary", "side_income", "investment_income", "other_income")
+
 private val transactionCategories =
     mapOf(
         "food" to

@@ -8,9 +8,12 @@ import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.remote.ApiResult
 import com.yu_morph.smartbudget.data.remote.SmartBudgetApi
 import com.yu_morph.smartbudget.data.remote.api.TransactionListQuery
+import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.TransactionData
+import com.yu_morph.smartbudget.data.remote.model.UpdateTransactionRequest
 import com.yu_morph.smartbudget.ui.showAppToast
 import java.time.YearMonth
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -22,6 +25,7 @@ data class BudgetBookUiState(
     val month: YearMonth? = null,
     val transactions: List<TransactionData> = emptyList(),
     val isLoading: Boolean = false,
+    val isMutating: Boolean = false,
 )
 
 class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, private val scope: CoroutineScope) {
@@ -44,6 +48,44 @@ class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, p
                 applicationContext.showAppToast(R.string.unknown_error)
             } finally {
                 if (state.month == month) state = state.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun createTransaction(request: CreateTransactionRequest, onSuccess: () -> Unit) {
+        mutateTransaction(
+            request = { api.transactions.create(request, UUID.randomUUID().toString()) },
+            onSuccess = onSuccess,
+        )
+    }
+
+    fun updateTransaction(id: Int, request: UpdateTransactionRequest, onSuccess: () -> Unit) {
+        mutateTransaction(request = { api.transactions.update(id, request) }, onSuccess = onSuccess)
+    }
+
+    fun deleteTransaction(id: Int, onSuccess: () -> Unit) {
+        mutateTransaction(request = { api.transactions.delete(id) }, onSuccess = onSuccess)
+    }
+
+    private fun mutateTransaction(request: suspend () -> ApiResult<*>, onSuccess: () -> Unit) {
+        if (state.isMutating) return
+        scope.launch {
+            state = state.copy(isMutating = true)
+            try {
+                when (val result = request()) {
+                    is ApiResult.Success -> {
+                        onSuccess()
+                        state.month?.let(::loadMonth)
+                    }
+
+                    else -> showFailure(result)
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                applicationContext.showAppToast(R.string.unknown_error)
+            } finally {
+                state = state.copy(isMutating = false)
             }
         }
     }
