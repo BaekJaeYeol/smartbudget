@@ -327,6 +327,7 @@ private fun MonthCalendar(
                 )
             }
         }
+        if (!compact) HorizontalDivider(thickness = 0.5.dp, color = borderColor)
         days.chunked(7).forEach { week ->
             Row(
                 modifier =
@@ -430,7 +431,7 @@ private fun Modifier.calendarCellStyle(
         isOutsideMonth && !compact -> mutedBackground
         else -> Color.Transparent
     }
-    return then(sizedModifier).then(borderedModifier).background(backgroundColor)
+    return then(sizedModifier).background(backgroundColor).then(borderedModifier)
 }
 
 @Composable
@@ -441,7 +442,7 @@ private fun CalendarDateLabel(date: LocalDate, compact: Boolean, isOutsideMonth:
             Modifier
                 .size(if (compact) 24.dp else 26.dp)
                 .background(
-                    if (isToday) SmartBudgetGreen else Color.Transparent,
+                    if (isToday) Color.Black else Color.Transparent,
                     CircleShape,
                 ),
         contentAlignment = Alignment.Center,
