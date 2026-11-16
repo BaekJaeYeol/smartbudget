@@ -448,14 +448,14 @@ private fun CategoryIndicators(transactions: List<TransactionData>) {
     val categories = transactions.distinctBy(TransactionData::category)
     if (categories.isNotEmpty()) {
         Row(
-            modifier = Modifier.padding(start = 2.dp, top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
+            modifier = Modifier.padding(start = 2.dp, top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             categories.forEach { transaction ->
                 Box(
                     modifier =
                         Modifier
-                            .size(3.dp)
+                            .size(6.dp)
                             .background(transactionCategoryUi(transaction.category).color, CircleShape),
                 )
             }
