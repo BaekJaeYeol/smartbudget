@@ -21,12 +21,18 @@ import com.yu_morph.smartbudget.ui.showAppToast
 import java.time.YearMonth
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val BUDGET_HISTORY_MONTHS = 3
 private const val TRANSACTION_PAGE_LIMIT = 100
 private const val BANK_SYNC_START_DATE = "2025-01-01"
 private const val BANK_SYNC_END_DATE = "2026-12-31"
+private const val BANK_SYNC_MAX_ATTEMPTS = 3
+private const val BANK_SYNC_RETRY_DELAY_MILLIS = 250L
+private const val HTTP_NOT_FOUND = 404
+private const val HTTP_SERVICE_UNAVAILABLE = 503
+private const val IDEMPOTENCY_REQUEST_IN_PROGRESS = "IDEMPOTENCY_REQUEST_IN_PROGRESS"
 
 data class BudgetHistoryItem(val month: YearMonth, val amount: Int)
 
@@ -246,28 +252,22 @@ class SettingsCoordinator(
                 if (!deleteTransactionsInSyncRange()) return@launch
                 val syncSessionId = UUID.randomUUID().toString()
                 result.data.transactions.forEach { transaction ->
-                    val createResult =
-                        api.transactions.create(
-                            request =
-                                CreateTransactionRequest(
-                                    date = transaction.date,
-                                    type =
-                                        if (transaction.type == "INCOME") {
-                                            TransactionType.INCOME
-                                        } else {
-                                            TransactionType.EXPENSE
-                                        },
-                                    source = TransactionSource.FINANCIAL_SYNC,
-                                    category = transaction.category,
-                                    storeName = transaction.description,
-                                    amount = transaction.amount,
-                                ),
-                            idempotencyKey = "bank-sync-$syncSessionId-${transaction.transactionId}",
+                    val request =
+                        CreateTransactionRequest(
+                            date = transaction.date,
+                            type =
+                                if (transaction.type == "INCOME") {
+                                    TransactionType.INCOME
+                                } else {
+                                    TransactionType.EXPENSE
+                                },
+                            source = TransactionSource.FINANCIAL_SYNC,
+                            category = transaction.category,
+                            storeName = transaction.description,
+                            amount = transaction.amount,
                         )
-                    if (createResult !is ApiResult.Success) {
-                        showFailure(createResult)
-                        return@launch
-                    }
+                    val idempotencyKey = "bank-sync-$syncSessionId-${transaction.transactionId}"
+                    if (!createTransactionWithRetry(request, idempotencyKey)) return@launch
                 }
                 applicationContext.showAppToast(R.string.settings_bank_sync_success, result.data.count)
                 onSuccess()
@@ -310,13 +310,41 @@ class SettingsCoordinator(
 
     private suspend fun deleteTransactions(transactionIds: List<Int>): Boolean {
         transactionIds.forEach { transactionId ->
-            val result = api.transactions.delete(transactionId)
-            if (result !is ApiResult.Success) {
-                showFailure(result)
-                return false
-            }
+            if (!deleteTransactionWithRetry(transactionId)) return false
         }
         return true
+    }
+
+    private suspend fun createTransactionWithRetry(
+        request: CreateTransactionRequest,
+        idempotencyKey: String,
+    ): Boolean = executeBankSyncMutation {
+        api.transactions.create(request, idempotencyKey)
+    }
+
+    private suspend fun deleteTransactionWithRetry(transactionId: Int): Boolean =
+        executeBankSyncMutation(acceptNotFound = true) {
+            api.transactions.delete(transactionId)
+        }
+
+    private suspend fun executeBankSyncMutation(
+        acceptNotFound: Boolean = false,
+        request: suspend () -> ApiResult<*>,
+    ): Boolean {
+        var attempt = 1
+        var result = request()
+        while (
+            !result.isAcceptedBankSyncResult(acceptNotFound) &&
+            result.isTransientBankSyncFailure() &&
+            attempt < BANK_SYNC_MAX_ATTEMPTS
+        ) {
+            delay(BANK_SYNC_RETRY_DELAY_MILLIS * (1L shl (attempt - 1)))
+            result = request()
+            attempt += 1
+        }
+        val succeeded = result.isAcceptedBankSyncResult(acceptNotFound)
+        if (!succeeded) showFailure(result)
+        return succeeded
     }
 
     fun setLanguage(languageTag: String) {
@@ -393,3 +421,15 @@ class SettingsCoordinator(
 }
 
 enum class NotificationSetting { BUDGET_APPROACHING, BUDGET_EXCEEDED, ANALYSIS }
+
+internal fun ApiResult<*>.isTransientBankSyncFailure(): Boolean = this is ApiResult.NetworkFailure ||
+    this is ApiResult.DecodeFailure ||
+    (
+        this is ApiResult.HttpFailure &&
+            (status == HTTP_SERVICE_UNAVAILABLE || code == IDEMPOTENCY_REQUEST_IN_PROGRESS)
+        )
+
+private fun ApiResult<*>.isNotFound(): Boolean = this is ApiResult.HttpFailure && status == HTTP_NOT_FOUND
+
+private fun ApiResult<*>.isAcceptedBankSyncResult(acceptNotFound: Boolean): Boolean =
+    this is ApiResult.Success || (acceptNotFound && isNotFound())
