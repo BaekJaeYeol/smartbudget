@@ -180,7 +180,7 @@
     <string name="budget_book_expense">지출</string>
     <string name="budget_book_fixed_cost">고정비</string>
     <string name="budget_book_previous_months">이전 월 기록</string>
-    <string name="budget_book_detail">가계부 상세</string>
+    <string name="budget_book_detail">가계부</string>
     <string name="budget_book_selected_transactions">선택한 날의 거래</string>
     <string name="budget_book_transaction_count">%1$d건</string>
     <string name="budget_book_add_transaction">거래 추가</string>
@@ -192,6 +192,12 @@
     <string name="budget_book_back">가계부 요약으로 돌아가기</string>
     <string name="budget_book_previous_month">이전 달</string>
     <string name="budget_book_next_month">다음 달</string>
+    <string name="budget_book_select_month">이동할 년월 선택</string>
+    <string name="budget_book_previous_year">이전 연도</string>
+    <string name="budget_book_next_year">다음 연도</string>
+    <string name="budget_book_total">합계</string>
+    <string name="budget_book_no_transactions">이 날짜에는 거래내역이 없습니다.</string>
+    <string name="full_date">%1$d년 %2$d월 %3$d일</string>
     <string name="budget_book_income_amount">수입 %1$s원</string>
     <string name="budget_book_expense_amount">지출 %1$s원</string>
     <string name="weekday_sunday">일</string>

@@ -180,7 +180,7 @@
     <string name="budget_book_expense">Expense</string>
     <string name="budget_book_fixed_cost">Fixed cost</string>
     <string name="budget_book_previous_months">Previous months</string>
-    <string name="budget_book_detail">Ledger details</string>
+    <string name="budget_book_detail">Ledger</string>
     <string name="budget_book_selected_transactions">Transactions on the selected day</string>
     <string name="budget_book_transaction_count">%1$d transactions</string>
     <string name="budget_book_add_transaction">Add transaction</string>
@@ -192,6 +192,12 @@
     <string name="budget_book_back">Back to ledger overview</string>
     <string name="budget_book_previous_month">Previous month</string>
     <string name="budget_book_next_month">Next month</string>
+    <string name="budget_book_select_month">Select year and month</string>
+    <string name="budget_book_previous_year">Previous year</string>
+    <string name="budget_book_next_year">Next year</string>
+    <string name="budget_book_total">Total</string>
+    <string name="budget_book_no_transactions">There are no transactions on this date.</string>
+    <string name="full_date">%2$d/%3$d/%1$d</string>
     <string name="budget_book_income_amount">Income ₩%1$s</string>
     <string name="budget_book_expense_amount">Expense ₩%1$s</string>
     <string name="weekday_sunday">Sun</string>

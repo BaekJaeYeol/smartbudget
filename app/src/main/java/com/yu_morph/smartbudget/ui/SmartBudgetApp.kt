@@ -32,6 +32,7 @@ import com.yu_morph.smartbudget.ui.auth.LoginScreen
 import com.yu_morph.smartbudget.ui.auth.SignUpScreen
 import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.document.MarkdownViewerScreen
+import com.yu_morph.smartbudget.ui.main.BudgetBookCoordinator
 import com.yu_morph.smartbudget.ui.main.BudgetBookDetailScreen
 import com.yu_morph.smartbudget.ui.main.MainScreen
 import com.yu_morph.smartbudget.ui.main.MainTab
@@ -64,6 +65,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
     val settingsCoordinator = remember(context, api, scope, onDisplayModeChanged) {
         SettingsCoordinator(context, api, scope, onDisplayModeChanged, onLanguageChanged)
     }
+    val budgetBookCoordinator = remember(context, api, scope) { BudgetBookCoordinator(context, api, scope) }
     DisposableEffect(api) {
         onDispose(api::close)
     }
@@ -150,6 +152,8 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                 AppContent.BUDGET_BOOK_DETAIL -> openBudgetBookMonth?.let { month ->
                     BudgetBookDetailScreen(
                         month = YearMonth.parse(month),
+                        state = budgetBookCoordinator.state,
+                        onLoadMonth = budgetBookCoordinator::loadMonth,
                         onMonthChange = { changedMonth -> openBudgetBookMonth = changedMonth.toString() },
                         onBack = { openBudgetBookMonth = null },
                     )

@@ -4,7 +4,9 @@ package com.yu_morph.smartbudget.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,48 +14,70 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.data.remote.model.TransactionData
+import com.yu_morph.smartbudget.data.remote.model.TransactionType
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
-private val CalendarIncomeColor = Color(0xFF3FB284)
-private val CalendarExpenseColor = Color(0xFFF1A443)
+private val CalendarIncomeColor = Color(0xFF3278C7)
+private val CalendarExpenseColor = Color(0xFFD94A4A)
 private val CalendarTransferColor = Color(0xFF4B88D8)
+private val CalendarSundayColor = Color(0xFFD94A4A)
+private val CalendarSaturdayColor = Color(0xFF3278C7)
+private const val MONTH_SWIPE_THRESHOLD = 72f
 
 @Composable
 internal fun BudgetBookRoute(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Unit) =
@@ -113,7 +137,22 @@ private fun BudgetBookOverview(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Un
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BudgetBookDetailScreen(month: YearMonth, onMonthChange: (YearMonth) -> Unit, onBack: () -> Unit) {
+internal fun BudgetBookDetailScreen(
+    month: YearMonth,
+    state: BudgetBookUiState,
+    onLoadMonth: (YearMonth) -> Unit,
+    onMonthChange: (YearMonth) -> Unit,
+    onBack: () -> Unit,
+) {
+    var selectedDateText by rememberSaveable { mutableStateOf<String?>(null) }
+    var showMonthPicker by rememberSaveable { mutableStateOf(false) }
+    val transactions = if (state.month == month) state.transactions else emptyList()
+    val transactionsByDate = remember(transactions) { transactions.groupBy { LocalDate.parse(it.date) } }
+    val selectedDate = selectedDateText?.let(LocalDate::parse)
+    LaunchedEffect(month) {
+        selectedDateText = null
+        onLoadMonth(month)
+    }
     BackHandler(onBack = onBack)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -136,23 +175,55 @@ internal fun BudgetBookDetailScreen(month: YearMonth, onMonthChange: (YearMonth)
             )
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(innerPadding),
         ) {
-            MonthSelector(month, onMonthChange)
-            Spacer(Modifier.height(8.dp))
-            MonthCalendar(
-                month = month,
-                compact = false,
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                fillAvailableHeight = true,
-            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                MonthSelector(month, onMonthChange, onTitleClick = { showMonthPicker = true })
+                MonthSummary(transactions)
+                MonthCalendar(
+                    month = month,
+                    compact = false,
+                    transactionsByDate = transactionsByDate,
+                    onDateClick = { date ->
+                        if (YearMonth.from(date) == month) {
+                            selectedDateText = date.toString()
+                        } else {
+                            onMonthChange(YearMonth.from(date))
+                        }
+                    },
+                    onSwipeMonth = onMonthChange,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    fillAvailableHeight = true,
+                )
+            }
+            if (state.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = SmartBudgetGreen, strokeWidth = 3.dp)
+                }
+            }
         }
+    }
+    if (showMonthPicker) {
+        MonthPickerDialog(
+            selectedMonth = month,
+            onSelect = {
+                showMonthPicker = false
+                onMonthChange(it)
+            },
+            onDismiss = { showMonthPicker = false },
+        )
+    }
+    if (selectedDate != null) {
+        DailyTransactionsSheet(
+            date = selectedDate,
+            transactions = transactionsByDate[selectedDate].orEmpty(),
+            onDismiss = { selectedDateText = null },
+        )
     }
 }
 
@@ -162,10 +233,36 @@ private fun MonthCalendar(
     compact: Boolean,
     modifier: Modifier = Modifier,
     fillAvailableHeight: Boolean = false,
+    transactionsByDate: Map<LocalDate, List<TransactionData>> = emptyMap(),
+    onDateClick: ((LocalDate) -> Unit)? = null,
+    onSwipeMonth: ((YearMonth) -> Unit)? = null,
 ) {
     val days = remember(month) { calendarDays(month) }
     val cellHeight = if (compact) 42.dp else 72.dp
-    Column(modifier = modifier) {
+    var horizontalDrag by remember { mutableFloatStateOf(0f) }
+    val swipeModifier =
+        if (onSwipeMonth == null) {
+            Modifier
+        } else {
+            Modifier.pointerInput(month) {
+                detectHorizontalDragGestures(
+                    onDragStart = { horizontalDrag = 0f },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        horizontalDrag += dragAmount
+                    },
+                    onDragEnd = {
+                        when {
+                            horizontalDrag > MONTH_SWIPE_THRESHOLD -> onSwipeMonth(month.minusMonths(1))
+                            horizontalDrag < -MONTH_SWIPE_THRESHOLD -> onSwipeMonth(month.plusMonths(1))
+                        }
+                        horizontalDrag = 0f
+                    },
+                    onDragCancel = { horizontalDrag = 0f },
+                )
+            }
+        }
+    Column(modifier = modifier.then(swipeModifier)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             listOf(
                 R.string.weekday_sunday,
@@ -181,7 +278,7 @@ private fun MonthCalendar(
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -192,42 +289,16 @@ private fun MonthCalendar(
                         .fillMaxWidth()
                         .then(if (fillAvailableHeight) Modifier.weight(1f) else Modifier),
             ) {
-                week.forEach { date -> CalendarDay(date, cellHeight, compact, fillAvailableHeight) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.CalendarDay(date: LocalDate?, height: Dp, compact: Boolean, fillAvailableHeight: Boolean) {
-    Column(
-        modifier =
-            Modifier
-                .weight(1f)
-                .then(if (fillAvailableHeight) Modifier.fillMaxHeight() else Modifier.height(height))
-                .padding(top = 5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (date != null) {
-            val isToday = date == LocalDate.now()
-            Box(
-                modifier =
-                    Modifier
-                        .size(if (compact) 24.dp else 28.dp)
-                        .background(if (isToday) SmartBudgetGreen else Color.Transparent, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    date.dayOfMonth.toString(),
-                    color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                )
-            }
-            if (date.dayOfMonth % 3 == 2) {
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Box(Modifier.size(4.dp).background(CalendarExpenseColor, CircleShape))
-                    Box(Modifier.size(4.dp).background(CalendarTransferColor, CircleShape))
+                week.forEach { date ->
+                    CalendarDay(
+                        date = date,
+                        displayedMonth = month,
+                        transactions = transactionsByDate[date].orEmpty(),
+                        height = cellHeight,
+                        compact = compact,
+                        fillAvailableHeight = fillAvailableHeight,
+                        onClick = onDateClick,
+                    )
                 }
             }
         }
@@ -235,19 +306,283 @@ private fun RowScope.CalendarDay(date: LocalDate?, height: Dp, compact: Boolean,
 }
 
 @Composable
-private fun MonthSelector(month: YearMonth, onMonthChange: (YearMonth) -> Unit) {
-    Row(
+private fun RowScope.CalendarDay(
+    date: LocalDate,
+    displayedMonth: YearMonth,
+    transactions: List<TransactionData>,
+    height: Dp,
+    compact: Boolean,
+    fillAvailableHeight: Boolean,
+    onClick: ((LocalDate) -> Unit)?,
+) {
+    val isOutsideMonth = YearMonth.from(date) != displayedMonth
+    val backgroundColor =
+        if (isOutsideMonth && !compact) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f)
+        } else {
+            Color.Transparent
+        }
+    val interactionModifier = if (onClick == null) Modifier else Modifier.clickable { onClick(date) }
+    Column(
+        modifier =
+            Modifier
+                .weight(1f)
+                .then(if (fillAvailableHeight) Modifier.fillMaxHeight() else Modifier.height(height))
+                .then(
+                    if (compact) {
+                        Modifier
+                    } else {
+                        Modifier.border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                    },
+                )
+                .background(backgroundColor)
+                .then(interactionModifier)
+                .padding(top = 5.dp, start = 3.dp, end = 3.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val isToday = date == LocalDate.now()
+        Box(
+            modifier =
+                Modifier
+                    .size(if (compact) 24.dp else 28.dp)
+                    .background(if (isToday) SmartBudgetGreen else Color.Transparent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                date.dayOfMonth.toString(),
+                color = calendarDayTextColor(date, isToday, isOutsideMonth),
+                fontSize = 12.sp,
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+            )
+        }
+        if (!compact && !isOutsideMonth) DailyAmounts(transactions)
+    }
+}
+
+@Composable
+private fun calendarDayTextColor(date: LocalDate, isToday: Boolean, isOutsideMonth: Boolean): Color {
+    if (isToday) return Color.White
+    val color =
+        when (date.dayOfWeek) {
+            DayOfWeek.SUNDAY -> CalendarSundayColor
+            DayOfWeek.SATURDAY -> CalendarSaturdayColor
+            else -> MaterialTheme.colorScheme.onSurface
+        }
+    return if (isOutsideMonth) color.copy(alpha = 0.48f) else color
+}
+
+@Composable
+private fun DailyAmounts(transactions: List<TransactionData>) {
+    val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf(TransactionData::amount)
+    val expense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf(TransactionData::amount)
+    if (income > 0) AmountLabel("+${income.withComma()}", CalendarIncomeColor)
+    if (expense > 0) AmountLabel("-${expense.withComma()}", CalendarExpenseColor)
+    if (income > 0 && expense > 0) {
+        AmountLabel((income - expense).withSignedComma(), MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
+private fun AmountLabel(value: String, color: Color) {
+    Text(
+        text = value,
         modifier = Modifier.fillMaxWidth(),
+        color = color,
+        fontSize = 9.sp,
+        lineHeight = 11.sp,
+        maxLines = 1,
+        textAlign = TextAlign.End,
+    )
+}
+
+@Composable
+private fun MonthSelector(month: YearMonth, onMonthChange: (YearMonth) -> Unit, onTitleClick: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
+
     ) {
         IconButton(onClick = { onMonthChange(month.minusMonths(1)) }) {
             Icon(Icons.Outlined.ChevronLeft, stringResource(R.string.budget_book_previous_month))
         }
-        Text(monthTitle(month), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = monthTitle(month),
+            modifier =
+                Modifier
+                    .then(if (onTitleClick == null) Modifier else Modifier.clickable(onClick = onTitleClick))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
         IconButton(onClick = { onMonthChange(month.plusMonths(1)) }) {
             Icon(Icons.Outlined.ChevronRight, stringResource(R.string.budget_book_next_month))
         }
+    }
+}
+
+@Composable
+private fun MonthSummary(transactions: List<TransactionData>) {
+    val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf(TransactionData::amount)
+    val expense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf(TransactionData::amount)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SummaryAmount(
+            label = stringResource(R.string.budget_book_income),
+            amount = income,
+            color = CalendarIncomeColor,
+            modifier = Modifier.weight(1f),
+        )
+        SummaryAmount(
+            label = stringResource(R.string.budget_book_expense),
+            amount = expense,
+            color = CalendarExpenseColor,
+            modifier = Modifier.weight(1f),
+        )
+        SummaryAmount(
+            label = stringResource(R.string.budget_book_total),
+            amount = income - expense,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            signed = true,
+        )
+    }
+}
+
+@Composable
+private fun SummaryAmount(label: String, amount: Int, color: Color, modifier: Modifier, signed: Boolean = false) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+        Text(
+            text = if (signed) amount.withSignedComma() else amount.withComma(),
+            color = color,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun MonthPickerDialog(selectedMonth: YearMonth, onSelect: (YearMonth) -> Unit, onDismiss: () -> Unit) {
+    var selectedYear by rememberSaveable(selectedMonth) { mutableIntStateOf(selectedMonth.year) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.budget_book_select_month)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { selectedYear -= 1 }) {
+                        Icon(Icons.Outlined.ChevronLeft, stringResource(R.string.budget_book_previous_year))
+                    }
+                    Text(selectedYear.toString(), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = { selectedYear += 1 }) {
+                        Icon(Icons.Outlined.ChevronRight, stringResource(R.string.budget_book_next_year))
+                    }
+                }
+                repeat(4) { rowIndex ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        repeat(3) { columnIndex ->
+                            val monthNumber = rowIndex * 3 + columnIndex + 1
+                            val isSelected =
+                                selectedYear == selectedMonth.year && monthNumber == selectedMonth.monthValue
+                            Surface(
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .clickable { onSelect(YearMonth.of(selectedYear, monthNumber)) },
+                                shape = RoundedCornerShape(12.dp),
+                                color =
+                                    if (isSelected) {
+                                        SmartBudgetGreen
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.month_short, monthNumber),
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.budget_book_cancel)) } },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DailyTransactionsSheet(date: LocalDate, transactions: List<TransactionData>, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
+            Text(
+                text = stringResource(R.string.full_date, date.year, date.monthValue, date.dayOfMonth),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(12.dp))
+            if (transactions.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.budget_book_no_transactions),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+                    items(transactions, key = TransactionData::id) { transaction ->
+                        DailyTransactionRow(transaction)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailyTransactionRow(transaction: TransactionData) {
+    val isIncome = transaction.type == TransactionType.INCOME
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(38.dp)
+                    .background(
+                        (if (isIncome) CalendarIncomeColor else CalendarExpenseColor).copy(alpha = 0.12f),
+                        RoundedCornerShape(12.dp),
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .size(9.dp)
+                    .background(if (isIncome) CalendarIncomeColor else CalendarExpenseColor, CircleShape),
+            )
+        }
+        Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
+            Text(transaction.storeName ?: transaction.category, fontWeight = FontWeight.SemiBold)
+            Text(transaction.category, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        }
+        Text(
+            text = (if (isIncome) "+" else "-") + transaction.amount.withComma(),
+            color = if (isIncome) CalendarIncomeColor else CalendarExpenseColor,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 
@@ -290,16 +625,18 @@ private fun LedgerCard(modifier: Modifier = Modifier, content: @Composable Colum
     }
 }
 
-internal fun calendarDays(month: YearMonth): List<LocalDate?> {
-    val leading = month.atDay(1).dayOfWeek.value % DayOfWeek.SUNDAY.value.coerceAtLeast(1)
-    val normalizedLeading = if (month.atDay(1).dayOfWeek == DayOfWeek.SUNDAY) 0 else leading
-    val result = MutableList<LocalDate?>(normalizedLeading) { null }
-    for (day in 1..month.lengthOfMonth()) result += month.atDay(day)
-    while (result.size % 7 != 0) result += null
-    return result
+internal fun calendarDays(month: YearMonth): List<LocalDate> {
+    val firstDay = month.atDay(1)
+    val leadingDays = firstDay.dayOfWeek.value % DayOfWeek.SUNDAY.value
+    val calendarStart = firstDay.minusDays(leadingDays.toLong())
+    val occupiedCells = leadingDays + month.lengthOfMonth()
+    val cellCount = ((occupiedCells + 6) / 7) * 7
+    return List(cellCount) { offset -> calendarStart.plusDays(offset.toLong()) }
 }
 
 @Composable
 private fun monthTitle(month: YearMonth): String = stringResource(R.string.year_month, month.year, month.monthValue)
 
 private fun Int.withComma(): String = String.format("%,d", this)
+
+private fun Int.withSignedComma(): String = if (this > 0) "+${withComma()}" else withComma()

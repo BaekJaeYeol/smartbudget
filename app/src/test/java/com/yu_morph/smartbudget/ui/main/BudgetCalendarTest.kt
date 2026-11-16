@@ -2,7 +2,6 @@ package com.yu_morph.smartbudget.ui.main
 
 import java.time.YearMonth
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -11,15 +10,22 @@ class BudgetCalendarTest {
     fun `일요일에 시작하는 달은 첫 칸부터 날짜를 표시한다`() {
         val days = calendarDays(YearMonth.of(2026, 11))
 
-        assertEquals(1, days.first()?.dayOfMonth)
+        assertEquals(1, days.first().dayOfMonth)
     }
 
     @Test
-    fun `월요일에 시작하는 달은 일요일 칸을 비운다`() {
+    fun `월요일에 시작하는 달은 전월 마지막 일요일부터 표시한다`() {
         val days = calendarDays(YearMonth.of(2026, 6))
 
-        assertNull(days.first())
-        assertEquals(1, days[1]?.dayOfMonth)
+        assertEquals("2026-05-31", days.first().toString())
+        assertEquals("2026-06-01", days[1].toString())
+    }
+
+    @Test
+    fun `마지막 주의 빈 셀에는 익월 날짜를 표시한다`() {
+        val days = calendarDays(YearMonth.of(2026, 11))
+
+        assertEquals("2026-12-05", days.last().toString())
     }
 
     @Test
