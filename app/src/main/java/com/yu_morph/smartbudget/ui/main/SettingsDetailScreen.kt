@@ -272,7 +272,9 @@ private fun AccountSettings(
                             Text(month.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                             Text(
                                 text =
-                                    historyByMonth[month]?.let { formatCompactBudget(it.amount) }
+                                    historyByMonth[month]?.let {
+                                        formatCompactBudget(it.amount, state.appSettings.languageTag)
+                                    }
                                         ?: stringResource(R.string.settings_budget_history_unavailable),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -553,9 +555,9 @@ private fun budgetAdjustmentLabel(delta: Int): String = stringResource(
     kotlin.math.abs(delta) / 10_000,
 )
 
-internal fun formatCompactBudget(amount: Int, language: String = Locale.getDefault().language): String {
+internal fun formatCompactBudget(amount: Int, languageTag: String = Locale.getDefault().language): String {
     val formatter = DecimalFormat("0.#", DecimalFormatSymbols(Locale.US))
-    return if (language == Locale.KOREAN.language) {
+    return if (Locale.forLanguageTag(languageTag).language == Locale.KOREAN.language) {
         when {
             amount >= 100_000_000 -> "${formatter.format(amount / 100_000_000.0)}억원"
             amount >= 10_000 -> "${formatter.format(amount / 10_000.0)}만원"
