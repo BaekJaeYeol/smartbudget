@@ -100,6 +100,7 @@ private val CalendarIncomeColor = Color(0xFFD94A4A)
 private val CalendarExpenseColor = Color(0xFF3278C7)
 private val CalendarSundayColor = Color(0xFFD94A4A)
 private val CalendarSaturdayColor = Color(0xFF3278C7)
+private val CalendarWarningColor = Color(0xFFF59E0B)
 private const val MONTH_SWIPE_THRESHOLD = 72f
 private const val MONTH_TRANSITION_DURATION_MILLIS = 240
 
@@ -1079,6 +1080,12 @@ private data class CategoryStatTag(val category: String, val value: String)
 @Composable
 private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
     val ratio = stats.expenseRatioPercent
+    val ratioProgressColor =
+        when {
+            ratio == null || ratio < 100 -> SmartBudgetGreen
+            ratio < 200 -> CalendarWarningColor
+            else -> CalendarIncomeColor
+        }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MonthlyMetric(
             modifier = Modifier.weight(1f),
@@ -1086,6 +1093,7 @@ private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
             value = ratio?.let { "$it%" } ?: stringResource(R.string.budget_book_no_income_ratio),
             valueColor = MaterialTheme.colorScheme.onSurface,
             progress = ratio?.div(100f)?.coerceIn(0f, 1f),
+            progressColor = ratioProgressColor,
             valueTextAlign = TextAlign.End,
         )
         MonthlyMetric(
@@ -1097,6 +1105,8 @@ private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
                 stats.expenseChange < 0 -> CalendarIncomeColor
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
+            valueTextAlign = TextAlign.End,
+            alignValueToBottom = true,
         )
     }
 }
@@ -1108,15 +1118,19 @@ private fun MonthlyMetric(
     value: String,
     valueColor: Color,
     progress: Float? = null,
+    progressColor: Color = SmartBudgetGreen,
     valueTextAlign: TextAlign = TextAlign.Start,
+    alignValueToBottom: Boolean = false,
 ) {
     Surface(
         modifier = modifier.height(88.dp),
         shape = RoundedCornerShape(14.dp),
         color = overviewCalendarBackground(),
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Spacer(Modifier.height(2.dp))
+            if (alignValueToBottom) Spacer(Modifier.weight(1f))
             Text(
                 value,
                 modifier = Modifier.fillMaxWidth(),
@@ -1126,6 +1140,7 @@ private fun MonthlyMetric(
                 textAlign = valueTextAlign,
             )
             progress?.let {
+                Spacer(Modifier.height(5.dp))
                 Box(
                     modifier =
                         Modifier
@@ -1139,7 +1154,7 @@ private fun MonthlyMetric(
                             Modifier
                                 .fillMaxWidth(it)
                                 .fillMaxHeight()
-                                .background(SmartBudgetGreen, CircleShape),
+                                .background(progressColor, CircleShape),
                     )
                 }
             }
