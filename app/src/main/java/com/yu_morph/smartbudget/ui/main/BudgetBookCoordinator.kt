@@ -21,7 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private const val TRANSACTION_PAGE_LIMIT = 100
-private const val OVERVIEW_MONTH_COUNT = 6L
+private const val OVERVIEW_MONTH_COUNT = 4L
 
 data class BudgetBookOverviewUiState(
     val referenceMonth: YearMonth? = null,

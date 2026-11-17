@@ -130,7 +130,7 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
     val currentTransactions = state.transactionsByMonth[currentMonth].orEmpty()
     val currentTransactionsByDate =
         remember(currentTransactions) { currentTransactions.groupBy { LocalDate.parse(it.date) } }
-    val previousMonths = remember(currentMonth) { (1L..5L).map(currentMonth::minusMonths) }
+    val previousMonths = remember(currentMonth) { (1L..3L).map(currentMonth::minusMonths) }
     MainTabContainer(bottomPadding = bottomPadding) {
         LedgerCard(
             modifier =
@@ -350,7 +350,7 @@ private fun MonthCalendar(
     onSwipeMonth: ((YearMonth) -> Unit)? = null,
 ) {
     val days = remember(month) { calendarDays(month) }
-    val cellHeight = if (compact) 42.dp else 72.dp
+    val cellHeight = if (compact) 52.dp else 72.dp
     val mutedBackground = calendarMutedBackground()
     val borderColor = calendarBorderColor()
     var horizontalDrag by remember { mutableFloatStateOf(0f) }
@@ -468,15 +468,16 @@ private fun RowScope.CalendarDay(
         horizontalAlignment = Alignment.Start,
     ) {
         CalendarDateLabel(date, compact, isOutsideMonth)
-        if (!isOutsideMonth) CategoryIndicators(transactions)
+        if (!isOutsideMonth) CategoryIndicators(transactions, compact)
         if (!compact) Spacer(Modifier.weight(1f))
         if (!compact && !isOutsideMonth) DailyAmounts(transactions)
     }
 }
 
 @Composable
-private fun CategoryIndicators(transactions: List<TransactionData>) {
+private fun CategoryIndicators(transactions: List<TransactionData>, compact: Boolean) {
     val categories = transactions.distinctBy(TransactionData::category)
+    val indicatorSize = if (compact) 7.dp else 6.dp
     if (categories.isNotEmpty()) {
         Row(
             modifier = Modifier.padding(start = 2.dp, top = 8.dp),
@@ -486,8 +487,9 @@ private fun CategoryIndicators(transactions: List<TransactionData>) {
                 Box(
                     modifier =
                         Modifier
-                            .size(6.dp)
-                            .background(transactionCategoryUi(transaction.category).color, CircleShape),
+                            .size(indicatorSize)
+                            .clip(CircleShape)
+                            .background(transactionCategoryUi(transaction.category).color),
                 )
             }
         }
