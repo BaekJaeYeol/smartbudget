@@ -5,9 +5,6 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -16,7 +13,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -49,29 +44,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
@@ -79,10 +63,6 @@ import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.showAppToast
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.YearMonth
-import kotlin.math.floor
-import kotlin.math.min
-import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val MainNavigationInactiveColor = Color(0xFF737373)
@@ -91,48 +71,6 @@ private val MainActionGradientEnd = Color(0xFF087A55)
 private const val MAIN_TAB_PRESSED_SCALE = 0.88f
 private const val TAB_TRANSITION_DURATION_MILLIS = 260
 private const val TAB_SLIDE_DISTANCE_DIVISOR = 5
-private const val ROBOT_SPRITE_COLUMNS = 4
-private const val ROBOT_SPRITE_ROWS = 3
-private const val ROBOT_POSE_COUNT = ROBOT_SPRITE_COLUMNS * ROBOT_SPRITE_ROWS
-private const val ROBOT_RISE_DURATION_MILLIS = 420
-private const val ROBOT_RETURN_DELAY_MILLIS = 220L
-private const val ROBOT_RETURN_DURATION_MILLIS = 400
-private val RobotFrameBaselineOffsets =
-    floatArrayOf(
-        0f,
-        0f,
-        0f,
-        0f,
-        16f,
-        16f,
-        16f,
-        16f,
-        30f,
-        30f,
-        30f,
-        30f,
-    )
-private val RobotGreetingSequence =
-    listOf(
-        RobotPoseStep(1, 260, 140),
-        RobotPoseStep(2, 190, 40),
-        RobotPoseStep(3, 220, 170),
-        RobotPoseStep(4, 210, 60),
-        RobotPoseStep(5, 190, 40),
-        RobotPoseStep(6, 220, 170),
-        RobotPoseStep(7, 210, 80),
-        RobotPoseStep(8, 190, 130),
-        RobotPoseStep(9, 220, 150),
-        RobotPoseStep(10, 240, 60),
-        RobotPoseStep(11, 130, 30),
-        RobotPoseStep(10, 130, 30),
-        RobotPoseStep(11, 130, 30),
-        RobotPoseStep(10, 130, 30),
-        RobotPoseStep(11, 130, 80),
-        RobotPoseStep(9, 220, 160),
-    )
-
-private data class RobotPoseStep(val frame: Int, val durationMillis: Int, val pauseMillis: Long)
 
 internal enum class MainTab(
     @param:StringRes val label: Int,
@@ -229,14 +167,7 @@ internal fun MainScreen(
 
 @Composable
 private fun MainNavigationBar(selectedTab: MainTab, onTabSelected: (MainTab) -> Unit) {
-    var greetingRunId by remember { mutableIntStateOf(0) }
-    var isGreetingPlaying by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxWidth()) {
-        RobotGreeting(
-            greetingRunId = greetingRunId,
-            onAnimationFinished = { isGreetingPlaying = false },
-            modifier = Modifier.matchParentSize(),
-        )
         Surface(
             modifier = Modifier.padding(top = 12.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -257,96 +188,7 @@ private fun MainNavigationBar(selectedTab: MainTab, onTabSelected: (MainTab) -> 
                 }
             }
         }
-        MainActionButton(
-            onClick = {
-                if (!isGreetingPlaying) {
-                    isGreetingPlaying = true
-                    greetingRunId += 1
-                }
-            },
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-    }
-}
-
-@Composable
-private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, modifier: Modifier = Modifier) {
-    val sprite = ImageBitmap.imageResource(R.drawable.robot_greeting_sprite)
-    val verticalProgress = remember { Animatable(1f) }
-    val poseProgress = remember { Animatable(0f) }
-    val hiddenDistance = with(LocalDensity.current) { 144.dp.toPx() }
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(greetingRunId) {
-        if (greetingRunId == 0) return@LaunchedEffect
-        try {
-            isVisible = true
-            verticalProgress.snapTo(1f)
-            poseProgress.snapTo(0f)
-            verticalProgress.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(ROBOT_RISE_DURATION_MILLIS, easing = LinearOutSlowInEasing),
-            )
-            RobotGreetingSequence.forEach { step ->
-                poseProgress.animateTo(
-                    targetValue = step.frame.toFloat(),
-                    animationSpec = tween(step.durationMillis, easing = FastOutSlowInEasing),
-                )
-                delay(step.pauseMillis)
-            }
-            delay(ROBOT_RETURN_DELAY_MILLIS)
-            verticalProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(ROBOT_RETURN_DURATION_MILLIS, easing = FastOutLinearInEasing),
-            )
-        } finally {
-            isVisible = false
-            onAnimationFinished()
-        }
-    }
-
-    Box(modifier = modifier) {
-        if (isVisible) {
-            Canvas(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .size(144.dp)
-                        .offset(y = (-96).dp)
-                        .graphicsLayer {
-                            translationY = verticalProgress.value * hiddenDistance
-                        },
-            ) {
-                val frameWidth = sprite.width / ROBOT_SPRITE_COLUMNS
-                val frameHeight = sprite.height / ROBOT_SPRITE_ROWS
-                val pose = poseProgress.value.coerceIn(0f, (ROBOT_POSE_COUNT - 1).toFloat())
-                val firstFrame = floor(pose).toInt()
-                val secondFrame = min(firstFrame + 1, ROBOT_POSE_COUNT - 1)
-                val blend = pose - firstFrame
-
-                fun drawFrame(frame: Int, alpha: Float) {
-                    if (alpha <= 0f) return
-                    val baselineOffset =
-                        (RobotFrameBaselineOffsets[frame] / frameHeight * size.height).roundToInt()
-                    drawImage(
-                        image = sprite,
-                        srcOffset =
-                            IntOffset(
-                                x = frame % ROBOT_SPRITE_COLUMNS * frameWidth,
-                                y = frame / ROBOT_SPRITE_COLUMNS * frameHeight,
-                            ),
-                        srcSize = IntSize(frameWidth, frameHeight),
-                        dstOffset = IntOffset(0, baselineOffset),
-                        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
-                        alpha = alpha,
-                        filterQuality = FilterQuality.High,
-                    )
-                }
-
-                drawFrame(firstFrame, 1f - blend)
-                drawFrame(secondFrame, blend)
-            }
-        }
+        MainActionButton(modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 
@@ -394,9 +236,9 @@ private fun MainNavigationTab(tab: MainTab, isSelected: Boolean, onTabSelected: 
 }
 
 @Composable
-private fun MainActionButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun MainActionButton(modifier: Modifier = Modifier) {
     FloatingActionButton(
-        onClick = onClick,
+        onClick = {},
         modifier = modifier.size(58.dp),
         shape = CircleShape,
         containerColor = Color.Transparent,
