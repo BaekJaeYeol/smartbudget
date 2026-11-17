@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -44,18 +46,29 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
@@ -63,6 +76,7 @@ import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.showAppToast
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.YearMonth
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val MainNavigationInactiveColor = Color(0xFF737373)
@@ -71,6 +85,14 @@ private val MainActionGradientEnd = Color(0xFF087A55)
 private const val MAIN_TAB_PRESSED_SCALE = 0.88f
 private const val TAB_TRANSITION_DURATION_MILLIS = 260
 private const val TAB_SLIDE_DISTANCE_DIVISOR = 5
+private const val ROBOT_SPRITE_COLUMNS = 3
+private const val ROBOT_SPRITE_ROWS = 2
+private const val ROBOT_LOOK_DURATION_MILLIS = 300L
+private const val ROBOT_WAVE_DURATION_MILLIS = 150L
+private const val ROBOT_LOOK_START_DELAY_MILLIS = 180L
+private const val ROBOT_RETURN_DELAY_MILLIS = 220L
+private const val ROBOT_RETURN_DURATION_MILLIS = 360
+private val RobotGreetingFrames = listOf(1, 2, 0, 3, 4, 5, 4, 5, 4, 3)
 
 internal enum class MainTab(
     @param:StringRes val label: Int,
@@ -167,7 +189,9 @@ internal fun MainScreen(
 
 @Composable
 private fun MainNavigationBar(selectedTab: MainTab, onTabSelected: (MainTab) -> Unit) {
+    var greetingRunId by remember { mutableIntStateOf(0) }
     Box(modifier = Modifier.fillMaxWidth()) {
+        RobotGreeting(greetingRunId = greetingRunId, modifier = Modifier.align(Alignment.TopCenter))
         Surface(
             modifier = Modifier.padding(top = 12.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -188,7 +212,71 @@ private fun MainNavigationBar(selectedTab: MainTab, onTabSelected: (MainTab) -> 
                 }
             }
         }
-        MainActionButton(modifier = Modifier.align(Alignment.TopCenter))
+        MainActionButton(
+            onClick = { greetingRunId += 1 },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+    }
+}
+
+@Composable
+private fun RobotGreeting(greetingRunId: Int, modifier: Modifier = Modifier) {
+    val sprite = ImageBitmap.imageResource(R.drawable.robot_greeting_sprite)
+    val verticalProgress = remember { Animatable(1f) }
+    val hiddenDistance = with(LocalDensity.current) { 136.dp.toPx() }
+    var frameIndex by remember { mutableIntStateOf(0) }
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(greetingRunId) {
+        if (greetingRunId == 0) return@LaunchedEffect
+        isVisible = true
+        frameIndex = 0
+        verticalProgress.snapTo(1f)
+        verticalProgress.animateTo(
+            targetValue = 0f,
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+        )
+        delay(ROBOT_LOOK_START_DELAY_MILLIS)
+        RobotGreetingFrames.forEach { nextFrame ->
+            frameIndex = nextFrame
+            delay(if (nextFrame in 1..2) ROBOT_LOOK_DURATION_MILLIS else ROBOT_WAVE_DURATION_MILLIS)
+        }
+        delay(ROBOT_RETURN_DELAY_MILLIS)
+        verticalProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(ROBOT_RETURN_DURATION_MILLIS),
+        )
+        isVisible = false
+    }
+
+    if (isVisible) {
+        Canvas(
+            modifier =
+                modifier
+                    .size(136.dp)
+                    .offset(y = (-116).dp)
+                    .graphicsLayer {
+                        translationY = verticalProgress.value * hiddenDistance
+                    },
+        ) {
+            val frameWidth = sprite.width / ROBOT_SPRITE_COLUMNS
+            val frameHeight = sprite.height / ROBOT_SPRITE_ROWS
+            drawImage(
+                image = sprite,
+                srcOffset =
+                    IntOffset(
+                        x = frameIndex % ROBOT_SPRITE_COLUMNS * frameWidth,
+                        y = frameIndex / ROBOT_SPRITE_COLUMNS * frameHeight,
+                    ),
+                srcSize = IntSize(frameWidth, frameHeight),
+                dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                filterQuality = FilterQuality.High,
+            )
+        }
     }
 }
 
@@ -236,11 +324,9 @@ private fun MainNavigationTab(tab: MainTab, isSelected: Boolean, onTabSelected: 
 }
 
 @Composable
-private fun MainActionButton(modifier: Modifier = Modifier) {
+private fun MainActionButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
-        onClick = {
-            // FAB 동작은 후속 작업에서 구현합니다.
-        },
+        onClick = onClick,
         modifier = modifier.size(58.dp),
         shape = CircleShape,
         containerColor = Color.Transparent,
