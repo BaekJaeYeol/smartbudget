@@ -445,7 +445,7 @@ private fun MonthCalendar(
                     .background(if (compact) Color.Transparent else mutedBackground)
                     .padding(
                         top = if (compact) 0.dp else 2.dp,
-                        bottom = if (compact) 4.dp else 2.dp,
+                        bottom = if (compact) 8.dp else 2.dp,
                     ),
         ) {
             listOf(

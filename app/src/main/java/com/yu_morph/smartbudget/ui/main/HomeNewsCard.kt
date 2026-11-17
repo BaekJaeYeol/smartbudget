@@ -51,12 +51,12 @@ import coil3.compose.AsyncImage
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.remote.news.NewsArticle
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 
 @Composable
 internal fun NewsCard(
@@ -102,18 +102,18 @@ private fun BreakingNewsTicker(
         modifier = Modifier.fillMaxWidth().padding(end = 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = stringResource(R.string.home_breaking_news),
-            modifier = Modifier.padding(start = 18.dp, end = 4.dp),
-            color = MaterialTheme.colorScheme.error,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-        )
         Icon(
             imageVector = Icons.Outlined.Campaign,
             contentDescription = null,
-            modifier = Modifier.padding(end = 7.dp).size(16.dp),
+            modifier = Modifier.padding(start = 18.dp).size(16.dp),
             tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = stringResource(R.string.home_breaking_news),
+            modifier = Modifier.padding(start = 4.dp, end = 7.dp),
+            color = MaterialTheme.colorScheme.error,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
         )
         when {
             articles.isNotEmpty() -> ArticleMarquee(articles, onArticleClick, Modifier.weight(1f))
