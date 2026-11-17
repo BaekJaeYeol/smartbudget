@@ -137,9 +137,10 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
                 Modifier
                     .clip(RoundedCornerShape(24.dp))
                     .clickable { onOpenMonth(currentMonth) },
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 12.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -147,14 +148,15 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
                     Text(
                         stringResource(R.string.budget_book_current_month),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
                     )
-                    Text(monthTitle(currentMonth), fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text(monthTitle(currentMonth), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
                 IconButton(onClick = { onOpenMonth(currentMonth) }) {
                     Icon(
                         Icons.Outlined.ChevronRight,
                         contentDescription = stringResource(R.string.budget_book_view_all),
-                        tint = SmartBudgetGreen,
+                        tint = SettingsChevronColor,
                     )
                 }
             }
@@ -166,10 +168,10 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
             )
         }
         Spacer(Modifier.height(16.dp))
-        LedgerCard(contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)) {
+        LedgerCard(contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 10.dp)) {
             Text(
                 stringResource(R.string.budget_book_previous_months),
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -978,7 +980,7 @@ private fun PreviousMonthRow(month: YearMonth, income: Int, expense: Int, onClic
             Icons.Outlined.ChevronRight,
             contentDescription = null,
             modifier = Modifier.padding(start = 10.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = SettingsChevronColor,
         )
     }
 }

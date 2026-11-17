@@ -45,7 +45,7 @@ private val SettingsGradientCenter = Color(0xFFF7F7F7)
 private val SettingsGradientEnd = Color(0xFFEFEFEF)
 private val SettingsPrimaryText = Color(0xFF404247)
 private val SettingsSecondaryText = Color(0xFF8A8D92)
-private val SettingsChevronColor = Color(0xFFB3B7BC)
+internal val SettingsChevronColor = Color(0xFFB3B7BC)
 internal val SettingsAvatarBackground = Color(0xFFE2E5E9)
 internal val SettingsAvatarForeground = Color(0xFFB8BEC7)
 
