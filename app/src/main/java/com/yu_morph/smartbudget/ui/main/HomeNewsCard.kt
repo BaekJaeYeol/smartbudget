@@ -5,7 +5,6 @@ package com.yu_morph.smartbudget.ui.main
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -20,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -99,15 +99,21 @@ private fun BreakingNewsTicker(
     onArticleClick: (NewsArticle) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(end = 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(R.string.home_breaking_news),
-            modifier = Modifier.padding(start = 18.dp, end = 8.dp),
+            modifier = Modifier.padding(start = 18.dp, end = 4.dp),
             color = MaterialTheme.colorScheme.error,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
+        )
+        Icon(
+            imageVector = Icons.Outlined.Campaign,
+            contentDescription = null,
+            modifier = Modifier.padding(end = 7.dp).size(16.dp),
+            tint = MaterialTheme.colorScheme.error,
         )
         when {
             articles.isNotEmpty() -> ArticleMarquee(articles, onArticleClick, Modifier.weight(1f))
@@ -295,18 +301,19 @@ private fun EconomyArticleRow(article: NewsArticle, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
             Text(
                 text = article.title,
-                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = Int.MAX_VALUE),
+                modifier = Modifier.fillMaxWidth(),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
+                lineHeight = 16.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Clip,
+                overflow = TextOverflow.Ellipsis,
             )
             article.publishedAt?.let { publishedAt ->
                 Text(
                     text = formatNewsPublishedAt(publishedAt, locale),
-                    modifier = Modifier.padding(top = 3.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
+                    lineHeight = 14.sp,
                     maxLines = 1,
                 )
             }

@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
-private const val NEWS_PAGE_SIZE = 4
+private const val NEWS_PAGE_SIZE = 5
 
 data class HomeNewsUiState(
     val breakingNews: List<NewsArticle> = emptyList(),

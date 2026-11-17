@@ -160,7 +160,7 @@
     <string name="home_monthly_income">Income this month</string>
     <string name="home_monthly_expense">Spending this month</string>
     <string name="home_monthly_spending">Spending in month %1$d</string>
-    <string name="home_budget_progress">%2$s of the %1$s monthly budget</string>
+    <string name="home_budget_progress">Used %2$s of the %1$s monthly budget</string>
     <string name="home_remaining_budget">Remaining budget</string>
     <string name="sample_meal_set">Meal set</string>
     <string name="sample_cafe_order">Iced caramel macchiato</string>

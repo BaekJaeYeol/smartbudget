@@ -1,5 +1,6 @@
 package com.yu_morph.smartbudget.ui.main
 
+import androidx.compose.ui.graphics.Color
 import com.yu_morph.smartbudget.data.remote.model.TransactionData
 import com.yu_morph.smartbudget.data.remote.model.TransactionSource
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
@@ -17,6 +18,15 @@ class HomeDashboardCoordinatorTest {
             )
 
         assertEquals(HomeMonthlyAmounts(income = 3_000_000, expense = 500_000), summarizeHomeTransactions(transactions))
+    }
+
+    @Test
+    fun `예산 사용률 구간에 맞는 색상을 반환한다`() {
+        assertEquals(Color(0xFF17A673), budgetUsageColor(0.5f))
+        assertEquals(Color(0xFFF2C94C), budgetUsageColor(0.51f))
+        assertEquals(Color(0xFFF2994A), budgetUsageColor(0.71f))
+        assertEquals(Color(0xFFEB5757), budgetUsageColor(0.91f))
+        assertEquals(Color(0xFFEB5757), budgetUsageColor(1.2f))
     }
 
     private fun transaction(id: Int, type: TransactionType, amount: Int) = TransactionData(

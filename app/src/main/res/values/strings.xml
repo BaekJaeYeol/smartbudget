@@ -160,7 +160,7 @@
     <string name="home_monthly_income">이번 달 수입</string>
     <string name="home_monthly_expense">이번 달 지출</string>
     <string name="home_monthly_spending">%1$d월 소비 현황</string>
-    <string name="home_budget_progress">월 예산 %1$s 중 %2$s</string>
+    <string name="home_budget_progress">월 예산 %1$s의 %2$s 사용</string>
     <string name="home_remaining_budget">남은 예산</string>
     <string name="sample_meal_set">선선한일 세트</string>
     <string name="sample_cafe_order">아이스 카라멜 마키아또</string>

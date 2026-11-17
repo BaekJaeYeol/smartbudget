@@ -39,6 +39,9 @@ import java.text.NumberFormat
 
 private val ExpenseRed = Color(0xFFEA5A5A)
 private val IncomeBlue = Color(0xFF4B88D8)
+private val BudgetYellow = Color(0xFFF2C94C)
+private val BudgetOrange = Color(0xFFF2994A)
+private val BudgetRed = Color(0xFFEB5757)
 
 @Composable
 internal fun HomeScreen(
@@ -86,6 +89,7 @@ internal fun HomeScreen(
 @Composable
 private fun MonthlyOverviewCard(state: HomeDashboardUiState) {
     val progress = if (state.budget > 0) state.expense.toFloat() / state.budget else 0f
+    val progressColor = budgetUsageColor(progress)
     val percentFormat = NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0]).apply {
         maximumFractionDigits = 1
     }
@@ -109,7 +113,7 @@ private fun MonthlyOverviewCard(state: HomeDashboardUiState) {
             fontSize = 12.sp,
         )
         Spacer(Modifier.height(12.dp))
-        BudgetUsageBar(progress)
+        BudgetUsageBar(progress = progress, progressColor = progressColor)
         Spacer(Modifier.height(9.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
@@ -118,8 +122,8 @@ private fun MonthlyOverviewCard(state: HomeDashboardUiState) {
                 fontSize = 12.sp,
             )
             Text(
-                formatHomeAmount(state.budget - state.expense),
-                color = SmartBudgetGreen,
+                formatHomeAmount((state.budget - state.expense).coerceAtLeast(0)),
+                color = progressColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -128,7 +132,7 @@ private fun MonthlyOverviewCard(state: HomeDashboardUiState) {
 }
 
 @Composable
-private fun BudgetUsageBar(progress: Float) {
+private fun BudgetUsageBar(progress: Float, progressColor: Color) {
     val boundedProgress = progress.coerceIn(0f, 1f)
     Row(
         modifier =
@@ -138,7 +142,7 @@ private fun BudgetUsageBar(progress: Float) {
                 .clip(RoundedCornerShape(4.dp)),
     ) {
         if (boundedProgress > 0f) {
-            Box(Modifier.weight(boundedProgress).fillMaxHeight().background(SmartBudgetGreen))
+            Box(Modifier.weight(boundedProgress).fillMaxHeight().background(progressColor))
         }
         if (boundedProgress < 1f) {
             Box(
@@ -149,6 +153,13 @@ private fun BudgetUsageBar(progress: Float) {
             )
         }
     }
+}
+
+internal fun budgetUsageColor(progress: Float): Color = when {
+    progress <= 0.5f -> SmartBudgetGreen
+    progress <= 0.7f -> BudgetYellow
+    progress <= 0.9f -> BudgetOrange
+    else -> BudgetRed
 }
 
 @Composable
