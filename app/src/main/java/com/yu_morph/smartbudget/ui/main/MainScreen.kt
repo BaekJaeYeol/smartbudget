@@ -5,7 +5,9 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -79,6 +81,7 @@ import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.time.YearMonth
 import kotlin.math.floor
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -94,6 +97,21 @@ private const val ROBOT_POSE_COUNT = ROBOT_SPRITE_COLUMNS * ROBOT_SPRITE_ROWS
 private const val ROBOT_RISE_DURATION_MILLIS = 420
 private const val ROBOT_RETURN_DELAY_MILLIS = 220L
 private const val ROBOT_RETURN_DURATION_MILLIS = 400
+private val RobotFrameBaselineOffsets =
+    floatArrayOf(
+        0f,
+        0f,
+        0f,
+        0f,
+        16f,
+        16f,
+        16f,
+        16f,
+        30f,
+        30f,
+        30f,
+        30f,
+    )
 private val RobotGreetingSequence =
     listOf(
         RobotPoseStep(1, 260, 140),
@@ -267,7 +285,7 @@ private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, m
             poseProgress.snapTo(0f)
             verticalProgress.animateTo(
                 targetValue = 0f,
-                animationSpec = tween(ROBOT_RISE_DURATION_MILLIS, easing = FastOutSlowInEasing),
+                animationSpec = tween(ROBOT_RISE_DURATION_MILLIS, easing = LinearOutSlowInEasing),
             )
             RobotGreetingSequence.forEach { step ->
                 poseProgress.animateTo(
@@ -279,7 +297,7 @@ private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, m
             delay(ROBOT_RETURN_DELAY_MILLIS)
             verticalProgress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(ROBOT_RETURN_DURATION_MILLIS),
+                animationSpec = tween(ROBOT_RETURN_DURATION_MILLIS, easing = FastOutLinearInEasing),
             )
         } finally {
             isVisible = false
@@ -294,7 +312,7 @@ private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, m
                     Modifier
                         .align(Alignment.TopCenter)
                         .size(144.dp)
-                        .offset(y = (-102).dp)
+                        .offset(y = (-96).dp)
                         .graphicsLayer {
                             translationY = verticalProgress.value * hiddenDistance
                         },
@@ -308,6 +326,8 @@ private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, m
 
                 fun drawFrame(frame: Int, alpha: Float) {
                     if (alpha <= 0f) return
+                    val baselineOffset =
+                        (RobotFrameBaselineOffsets[frame] / frameHeight * size.height).roundToInt()
                     drawImage(
                         image = sprite,
                         srcOffset =
@@ -316,6 +336,7 @@ private fun RobotGreeting(greetingRunId: Int, onAnimationFinished: () -> Unit, m
                                 y = frame / ROBOT_SPRITE_COLUMNS * frameHeight,
                             ),
                         srcSize = IntSize(frameWidth, frameHeight),
+                        dstOffset = IntOffset(0, baselineOffset),
                         dstSize = IntSize(size.width.toInt(), size.height.toInt()),
                         alpha = alpha,
                         filterQuality = FilterQuality.High,
