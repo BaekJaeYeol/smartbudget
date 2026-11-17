@@ -161,11 +161,21 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
                 }
             }
             Spacer(Modifier.height(16.dp))
-            MonthCalendar(
-                month = currentMonth,
-                compact = true,
-                transactionsByDate = currentTransactionsByDate,
-            )
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(overviewCalendarBackground())
+                        .padding(12.dp),
+            ) {
+                MonthCalendar(
+                    month = currentMonth,
+                    compact = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    transactionsByDate = currentTransactionsByDate,
+                )
+            }
         }
         Spacer(Modifier.height(16.dp))
         LedgerCard(contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 10.dp)) {
@@ -1046,6 +1056,10 @@ internal fun formatCalendarAmount(amount: Int, languageTag: String): String {
 @Composable
 private fun calendarMutedBackground(): Color =
     if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color(0xFFF3F3F3) else Color(0xFF252525)
+
+@Composable
+private fun overviewCalendarBackground(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color(0xFFF7F7F7) else Color(0xFF252525)
 
 @Composable
 private fun calendarBorderColor(): Color =
