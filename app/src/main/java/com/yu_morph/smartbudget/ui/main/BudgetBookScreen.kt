@@ -1086,17 +1086,17 @@ private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
             value = ratio?.let { "$it%" } ?: stringResource(R.string.budget_book_no_income_ratio),
             valueColor = MaterialTheme.colorScheme.onSurface,
             progress = ratio?.div(100f)?.coerceIn(0f, 1f),
+            valueTextAlign = TextAlign.End,
         )
         MonthlyMetric(
             modifier = Modifier.weight(1f),
             label = stringResource(R.string.budget_book_expense_change),
             value = stringResource(R.string.budget_book_currency_amount, stats.expenseChange.withSignedComma()),
-            valueColor =
-                if (stats.expenseChange > 0) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    SmartBudgetGreen
-                },
+            valueColor = when {
+                stats.expenseChange > 0 -> CalendarExpenseColor
+                stats.expenseChange < 0 -> CalendarIncomeColor
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
         )
     }
 }
@@ -1108,15 +1108,23 @@ private fun MonthlyMetric(
     value: String,
     valueColor: Color,
     progress: Float? = null,
+    valueTextAlign: TextAlign = TextAlign.Start,
 ) {
     Surface(
-        modifier = modifier.heightIn(min = 72.dp),
+        modifier = modifier.height(88.dp),
         shape = RoundedCornerShape(14.dp),
-        color = calendarMutedBackground(),
+        color = overviewCalendarBackground(),
     ) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-            Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(
+                value,
+                modifier = Modifier.fillMaxWidth(),
+                color = valueColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = valueTextAlign,
+            )
             progress?.let {
                 Box(
                     modifier =
@@ -1152,8 +1160,8 @@ private fun CategoryStatisticsTags(title: String, tags: List<CategoryStatTag>) {
                     color = category.color.copy(alpha = 0.12f),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 7.dp),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier.padding(start = 11.dp, top = 7.dp, end = 8.dp, bottom = 7.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(category.icon, null, modifier = Modifier.size(15.dp), tint = category.color)
@@ -1161,10 +1169,17 @@ private fun CategoryStatisticsTags(title: String, tags: List<CategoryStatTag>) {
                             Text(
                                 stringResource(category.label),
                                 fontSize = 10.sp,
+                                lineHeight = 10.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Text(tag.value, color = category.color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                tag.value,
+                                color = category.color,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                lineHeight = 10.sp,
+                            )
                         }
                     }
                 }
