@@ -442,7 +442,10 @@ private fun MonthCalendar(
                 Modifier
                     .fillMaxWidth()
                     .background(if (compact) Color.Transparent else mutedBackground)
-                    .padding(vertical = if (compact) 0.dp else 2.dp),
+                    .padding(
+                        top = if (compact) 0.dp else 2.dp,
+                        bottom = if (compact) 4.dp else 2.dp,
+                    ),
         ) {
             listOf(
                 R.string.weekday_sunday,
@@ -1133,7 +1136,12 @@ private fun MonthlyMetric(
         color = overviewCalendarBackground(),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Text(
+                label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                lineHeight = 11.sp,
+            )
             if (alignValueToBottom) Spacer(Modifier.weight(1f))
             Text(
                 value,
