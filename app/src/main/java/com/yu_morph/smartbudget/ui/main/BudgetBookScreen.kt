@@ -1209,7 +1209,7 @@ private fun CategoryStatisticsTags(title: String, tags: List<CategoryStatTag>) {
                                 tag.value,
                                 fontSize = 10.sp,
                                 lineHeight = 10.sp,
-                                modifier = Modifier.alpha(0.8f)
+                                modifier = Modifier.alpha(0.8f),
                             )
                         }
                     }
