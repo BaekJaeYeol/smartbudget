@@ -25,12 +25,13 @@
     <string name="already_have_account">Already have an account? </string>
     <string name="home_tab">Home</string>
     <string name="home_breaking_news">Breaking</string>
-    <string name="home_economy_news">Economy News</string>
-    <string name="home_news_more">+ More</string>
     <string name="home_news_loading">Loading news…</string>
     <string name="home_news_unavailable">News is currently unavailable.</string>
     <string name="home_news_thumbnail">Thumbnail for %1$s</string>
     <string name="home_news_open_failed">Couldn’t open the article.</string>
+    <string name="home_news_page">%1$d / %2$d</string>
+    <string name="home_news_previous_page">Previous news page</string>
+    <string name="home_news_next_page">Next news page</string>
     <string name="budget_book_tab">Ledger</string>
     <string name="analysis_tab">Analysis</string>
     <string name="settings_tab">Settings</string>
@@ -159,21 +160,8 @@
     <string name="home_monthly_income">Income this month</string>
     <string name="home_monthly_expense">Spending this month</string>
     <string name="home_monthly_spending">Spending in month %1$d</string>
-    <string name="home_sample_spending">₩1,250,000</string>
-    <string name="home_budget_progress" formatted="false">62.5% of the ₩2,000,000 monthly budget</string>
+    <string name="home_budget_progress">%2$s of the %1$s monthly budget</string>
     <string name="home_remaining_budget">Remaining budget</string>
-    <string name="home_sample_remaining">₩750,000</string>
-    <string name="home_insight_title">Today’s spending insight</string>
-    <string name="home_insight_summary" formatted="false">Dining spending increased 15% from last month.</string>
-    <string name="home_insight_body">Reducing delivery orders by just one this week can bring you closer to your monthly goal.</string>
-    <string name="home_recent_transactions">Recent spending</string>
-    <string name="home_this_week">This week</string>
-    <string name="sample_mart">E-Mart</string>
-    <string name="sample_grocery">Groceries</string>
-    <string name="sample_cafe_name">Starbucks</string>
-    <string name="sample_cafe">Cafe</string>
-    <string name="sample_transit">Public transit</string>
-    <string name="sample_transport">Transportation</string>
     <string name="sample_meal_set">Meal set</string>
     <string name="sample_cafe_order">Iced caramel macchiato</string>
     <string name="sample_bus_ride">Bus fare</string>

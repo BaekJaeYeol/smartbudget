@@ -7,7 +7,7 @@ import androidx.compose.runtime.setValue
 import com.yu_morph.smartbudget.data.remote.news.NewsArticle
 import com.yu_morph.smartbudget.data.remote.news.NewsFeedRepository
 import java.io.Closeable
-import kotlin.math.min
+import kotlin.math.ceil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -20,10 +20,16 @@ private const val NEWS_PAGE_SIZE = 4
 data class HomeNewsUiState(
     val breakingNews: List<NewsArticle> = emptyList(),
     val economyNews: List<NewsArticle> = emptyList(),
-    val visibleEconomyCount: Int = NEWS_PAGE_SIZE,
+    val economyPage: Int = 0,
     val isLoading: Boolean = false,
     val hasError: Boolean = false,
-)
+) {
+    val economyPageCount: Int
+        get() = ceil(economyNews.size.toDouble() / NEWS_PAGE_SIZE).toInt()
+
+    val economyPageArticles: List<NewsArticle>
+        get() = economyNews.drop(economyPage * NEWS_PAGE_SIZE).take(NEWS_PAGE_SIZE)
+}
 
 class HomeNewsCoordinator(context: Context, private val scope: CoroutineScope) : Closeable {
     private val repository = NewsFeedRepository(context)
@@ -48,7 +54,7 @@ class HomeNewsCoordinator(context: Context, private val scope: CoroutineScope) :
                     state.copy(
                         breakingNews = breaking,
                         economyNews = economy,
-                        visibleEconomyCount = NEWS_PAGE_SIZE,
+                        economyPage = 0,
                         hasError = breaking.isEmpty() && economy.isEmpty(),
                     )
             } finally {
@@ -57,11 +63,14 @@ class HomeNewsCoordinator(context: Context, private val scope: CoroutineScope) :
         }
     }
 
-    fun showMoreEconomyNews() {
-        state =
-            state.copy(
-                visibleEconomyCount = min(state.visibleEconomyCount + NEWS_PAGE_SIZE, state.economyNews.size),
-            )
+    fun showPreviousEconomyPage() {
+        if (state.economyPage > 0) state = state.copy(economyPage = state.economyPage - 1)
+    }
+
+    fun showNextEconomyPage() {
+        if (state.economyPage + 1 < state.economyPageCount) {
+            state = state.copy(economyPage = state.economyPage + 1)
+        }
     }
 
     override fun close() {

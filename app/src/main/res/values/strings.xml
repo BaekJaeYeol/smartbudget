@@ -25,12 +25,13 @@
     <string name="already_have_account">이미 계정이 있으신가요? </string>
     <string name="home_tab">홈</string>
     <string name="home_breaking_news">속보</string>
-    <string name="home_economy_news">경제 뉴스</string>
-    <string name="home_news_more">+ 더보기</string>
     <string name="home_news_loading">뉴스를 불러오는 중…</string>
     <string name="home_news_unavailable">뉴스를 불러올 수 없어요.</string>
     <string name="home_news_thumbnail">%1$s 기사 썸네일</string>
     <string name="home_news_open_failed">기사 페이지를 열 수 없어요.</string>
+    <string name="home_news_page">%1$d / %2$d</string>
+    <string name="home_news_previous_page">이전 뉴스 페이지</string>
+    <string name="home_news_next_page">다음 뉴스 페이지</string>
     <string name="budget_book_tab">가계부</string>
     <string name="analysis_tab">분석</string>
     <string name="settings_tab">설정</string>
@@ -159,21 +160,8 @@
     <string name="home_monthly_income">이번 달 수입</string>
     <string name="home_monthly_expense">이번 달 지출</string>
     <string name="home_monthly_spending">%1$d월 소비 현황</string>
-    <string name="home_sample_spending">1,250,000원</string>
-    <string name="home_budget_progress" formatted="false">월 예산 2,000,000원 중 62.5%</string>
+    <string name="home_budget_progress">월 예산 %1$s 중 %2$s</string>
     <string name="home_remaining_budget">남은 예산</string>
-    <string name="home_sample_remaining">750,000원</string>
-    <string name="home_insight_title">오늘의 소비 인사이트</string>
-    <string name="home_insight_summary" formatted="false">지난달보다 외식비가 15% 늘었어요.</string>
-    <string name="home_insight_body">이번 주에는 배달 주문을 한 번만 줄여도 월 목표에 더 가까워질 수 있어요.</string>
-    <string name="home_recent_transactions">최근 소비 내역</string>
-    <string name="home_this_week">이번 주</string>
-    <string name="sample_mart">이마트</string>
-    <string name="sample_grocery">식료품</string>
-    <string name="sample_cafe_name">스타벅스</string>
-    <string name="sample_cafe">카페</string>
-    <string name="sample_transit">대중교통</string>
-    <string name="sample_transport">교통</string>
     <string name="sample_meal_set">선선한일 세트</string>
     <string name="sample_cafe_order">아이스 카라멜 마키아또</string>
     <string name="sample_bus_ride">버스 승차</string>

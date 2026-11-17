@@ -10,6 +10,10 @@ import io.ktor.http.HttpHeaders
 import java.io.Closeable
 import java.io.IOException
 import java.io.StringReader
+import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlinx.coroutines.CancellationException
 import org.w3c.dom.Element
@@ -24,7 +28,7 @@ private const val HTTP_SUCCESS_MIN = 200
 private const val HTTP_SUCCESS_MAX = 299
 private const val USER_AGENT = "SmartBudget Android RSS Reader"
 
-data class NewsArticle(val title: String, val link: String, val description: String, val thumbnailUrl: String?)
+data class NewsArticle(val title: String, val link: String, val publishedAt: Instant?, val thumbnailUrl: String?)
 
 class NewsFeedRepository(context: Context, private val client: HttpClient = SmartBudgetHttpClientFactory.create()) :
     Closeable {
@@ -89,7 +93,7 @@ internal object NewsFeedParser {
             NewsArticle(
                 title = title,
                 link = link,
-                description = directChildText("description").cleanText(),
+                publishedAt = directChildText("pubDate").toPublishedAt(),
                 thumbnailUrl = mediaThumbnailUrl(),
             )
         }
@@ -127,6 +131,12 @@ internal object NewsFeedParser {
         .replace("&amp;", "&")
         .replace(Regex("\\s+"), " ")
         .trim()
+
+    private fun String.toPublishedAt(): Instant? = try {
+        ZonedDateTime.parse(trim(), DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
+    } catch (_: DateTimeParseException) {
+        null
+    }
 
     private fun DocumentBuilderFactory.setFeatureIfSupported(feature: String, enabled: Boolean) {
         // Android 버전에 따라 일부 보안 기능을 지원하지 않으므로 원문의 DOCTYPE 차단과 함께 적용한다.

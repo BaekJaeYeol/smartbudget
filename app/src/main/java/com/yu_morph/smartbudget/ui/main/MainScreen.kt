@@ -97,9 +97,12 @@ internal fun MainScreen(
     onSettingsLoad: () -> Unit,
     budgetBookState: BudgetBookOverviewUiState,
     onBudgetBookLoad: () -> Unit,
+    homeDashboardState: HomeDashboardUiState,
+    onHomeDashboardLoad: () -> Unit,
     homeNewsState: HomeNewsUiState,
     onHomeNewsLoad: () -> Unit,
-    onShowMoreHomeNews: () -> Unit,
+    onPreviousHomeNewsPage: () -> Unit,
+    onNextHomeNewsPage: () -> Unit,
     onNewsArticleClick: (NewsArticle) -> Unit,
     onLogout: () -> Unit,
     onOpenDocument: (MarkdownDocument) -> Unit,
@@ -145,9 +148,12 @@ internal fun MainScreen(
                 when (currentTab) {
                     MainTab.HOME -> HomeScreen(
                         bottomPadding = innerPadding.calculateBottomPadding(),
+                        dashboardState = homeDashboardState,
                         newsState = homeNewsState,
+                        onDashboardLoad = onHomeDashboardLoad,
                         onNewsLoad = onHomeNewsLoad,
-                        onShowMoreNews = onShowMoreHomeNews,
+                        onPreviousNewsPage = onPreviousHomeNewsPage,
+                        onNextNewsPage = onNextHomeNewsPage,
                         onArticleClick = onNewsArticleClick,
                     )
 

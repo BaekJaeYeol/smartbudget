@@ -1,5 +1,6 @@
 package com.yu_morph.smartbudget.data.remote.news
 
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -16,6 +17,7 @@ class NewsFeedParserTest {
                         <item>
                             <title><![CDATA[첫 번째 &quot;경제&quot; 기사]]></title>
                             <link>https://example.com/first</link>
+                            <pubDate>Tue, 17 Nov 2026 08:12:00 +0900</pubDate>
                             <description><![CDATA[<b>주요</b> 기사 설명입니다.]]></description>
                             <media:content url="https://example.com/first.jpg" type="image/jpeg" />
                             <media:content url="https://example.com/second.jpg" type="image/jpeg" />
@@ -32,8 +34,9 @@ class NewsFeedParserTest {
 
         assertEquals(2, articles.size)
         assertEquals("첫 번째 \"경제\" 기사", articles[0].title)
-        assertEquals("주요 기사 설명입니다.", articles[0].description)
+        assertEquals(Instant.parse("2026-11-16T23:12:00Z"), articles[0].publishedAt)
         assertEquals("https://example.com/first.jpg", articles[0].thumbnailUrl)
+        assertNull(articles[1].publishedAt)
         assertNull(articles[1].thumbnailUrl)
     }
 

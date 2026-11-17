@@ -35,6 +35,7 @@ import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.document.MarkdownViewerScreen
 import com.yu_morph.smartbudget.ui.main.BudgetBookCoordinator
 import com.yu_morph.smartbudget.ui.main.BudgetBookDetailScreen
+import com.yu_morph.smartbudget.ui.main.HomeDashboardCoordinator
 import com.yu_morph.smartbudget.ui.main.HomeNewsCoordinator
 import com.yu_morph.smartbudget.ui.main.MainScreen
 import com.yu_morph.smartbudget.ui.main.MainTab
@@ -68,6 +69,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
         SettingsCoordinator(context, api, scope, onDisplayModeChanged, onLanguageChanged)
     }
     val budgetBookCoordinator = remember(context, api, scope) { BudgetBookCoordinator(context, api, scope) }
+    val homeDashboardCoordinator = remember(context, api, scope) { HomeDashboardCoordinator(context, api, scope) }
     val homeNewsCoordinator = remember(context, scope) { HomeNewsCoordinator(context, scope) }
     DisposableEffect(api) {
         onDispose(api::close)
@@ -101,6 +103,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                     coordinator = coordinator,
                     settingsCoordinator = settingsCoordinator,
                     budgetBookCoordinator = budgetBookCoordinator,
+                    homeDashboardCoordinator = homeDashboardCoordinator,
                     homeNewsCoordinator = homeNewsCoordinator,
                     selectedMainTab = selectedMainTab,
                     onMainTabSelected = { selectedMainTab = it },
@@ -203,6 +206,7 @@ private fun AuthenticationContent(
     coordinator: AuthCoordinator,
     settingsCoordinator: SettingsCoordinator,
     budgetBookCoordinator: BudgetBookCoordinator,
+    homeDashboardCoordinator: HomeDashboardCoordinator,
     homeNewsCoordinator: HomeNewsCoordinator,
     selectedMainTab: MainTab,
     onMainTabSelected: (MainTab) -> Unit,
@@ -261,9 +265,12 @@ private fun AuthenticationContent(
                 onSettingsLoad = settingsCoordinator::refresh,
                 budgetBookState = budgetBookCoordinator.overviewState,
                 onBudgetBookLoad = { budgetBookCoordinator.loadOverview() },
+                homeDashboardState = homeDashboardCoordinator.state,
+                onHomeDashboardLoad = homeDashboardCoordinator::load,
                 homeNewsState = homeNewsCoordinator.state,
                 onHomeNewsLoad = homeNewsCoordinator::load,
-                onShowMoreHomeNews = homeNewsCoordinator::showMoreEconomyNews,
+                onPreviousHomeNewsPage = homeNewsCoordinator::showPreviousEconomyPage,
+                onNextHomeNewsPage = homeNewsCoordinator::showNextEconomyPage,
                 onNewsArticleClick = { article ->
                     if (!launchAppCustomTab(context, article.link)) {
                         context.showAppToast(R.string.home_news_open_failed)

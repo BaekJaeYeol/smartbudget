@@ -5,28 +5,29 @@ package com.yu_morph.smartbudget.ui.main
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,11 +51,20 @@ import coil3.compose.AsyncImage
 import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.remote.news.NewsArticle
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 @Composable
-internal fun NewsCard(state: HomeNewsUiState, onShowMore: () -> Unit, onArticleClick: (NewsArticle) -> Unit) {
+internal fun NewsCard(
+    state: HomeNewsUiState,
+    onPreviousPage: () -> Unit,
+    onNextPage: () -> Unit,
+    onArticleClick: (NewsArticle) -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -66,10 +77,15 @@ internal fun NewsCard(state: HomeNewsUiState, onShowMore: () -> Unit, onArticleC
                 isLoading = state.isLoading,
                 onArticleClick = onArticleClick,
             )
-            HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+            )
             EconomyNewsSection(
                 state = state,
-                onShowMore = onShowMore,
+                onPreviousPage = onPreviousPage,
+                onNextPage = onNextPage,
                 onArticleClick = onArticleClick,
             )
         }
@@ -170,15 +186,14 @@ private fun ArticleTickerCycle(
 }
 
 @Composable
-private fun EconomyNewsSection(state: HomeNewsUiState, onShowMore: () -> Unit, onArticleClick: (NewsArticle) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
-        Text(
-            text = stringResource(R.string.home_economy_news),
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(6.dp))
-        val visibleArticles = state.economyNews.take(state.visibleEconomyCount)
+private fun EconomyNewsSection(
+    state: HomeNewsUiState,
+    onPreviousPage: () -> Unit,
+    onNextPage: () -> Unit,
+    onArticleClick: (NewsArticle) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp)) {
+        val visibleArticles = state.economyPageArticles
         if (visibleArticles.isEmpty()) {
             Text(
                 text =
@@ -193,34 +208,62 @@ private fun EconomyNewsSection(state: HomeNewsUiState, onShowMore: () -> Unit, o
             visibleArticles.forEachIndexed { index, article ->
                 EconomyArticleRow(article = article, onClick = { onArticleClick(article) })
                 if (index != visibleArticles.lastIndex) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
             }
         }
-        if (state.visibleEconomyCount < state.economyNews.size) {
-            TextButton(
-                onClick = onShowMore,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.home_news_more),
-                    color = SmartBudgetGreen,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+        if (state.economyPageCount > 1) {
+            NewsPagination(
+                currentPage = state.economyPage,
+                pageCount = state.economyPageCount,
+                onPreviousPage = onPreviousPage,
+                onNextPage = onNextPage,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NewsPagination(currentPage: Int, pageCount: Int, onPreviousPage: () -> Unit, onNextPage: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+    ) {
+        IconButton(onClick = onPreviousPage, enabled = currentPage > 0, modifier = Modifier.size(32.dp)) {
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.home_news_previous_page),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(R.string.home_news_page, currentPage + 1, pageCount),
+            modifier = Modifier.padding(horizontal = 8.dp),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        IconButton(onClick = onNextPage, enabled = currentPage + 1 < pageCount, modifier = Modifier.size(32.dp)) {
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.home_news_next_page),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
 private fun EconomyArticleRow(article: NewsArticle, onClick: () -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(4.dp))
                 .clickable(onClick = onClick)
-                .padding(vertical = 10.dp),
+                .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (article.thumbnailUrl != null) {
@@ -229,8 +272,8 @@ private fun EconomyArticleRow(article: NewsArticle, onClick: () -> Unit) {
                 contentDescription = stringResource(R.string.home_news_thumbnail, article.title),
                 modifier =
                     Modifier
-                        .size(width = 82.dp, height = 66.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(width = 50.dp, height = 40.dp)
+                        .clip(RoundedCornerShape(9.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop,
             )
@@ -238,8 +281,8 @@ private fun EconomyArticleRow(article: NewsArticle, onClick: () -> Unit) {
             Box(
                 modifier =
                     Modifier
-                        .size(width = 82.dp, height = 66.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                        .size(width = 50.dp, height = 40.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(9.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -252,22 +295,27 @@ private fun EconomyArticleRow(article: NewsArticle, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
             Text(
                 text = article.title,
+                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = Int.MAX_VALUE),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
             )
-            if (article.description.isNotBlank()) {
+            article.publishedAt?.let { publishedAt ->
                 Text(
-                    text = article.description,
-                    modifier = Modifier.padding(top = 4.dp),
+                    text = formatNewsPublishedAt(publishedAt, locale),
+                    modifier = Modifier.padding(top = 3.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
         }
     }
+}
+
+internal fun formatNewsPublishedAt(publishedAt: Instant, locale: Locale): String {
+    val pattern = if (locale.language == Locale.KOREAN.language) "M월 d일 a h:mm" else "MMM d, h:mm a"
+    return DateTimeFormatter.ofPattern(pattern, locale)
+        .format(publishedAt.atZone(ZoneId.of("Asia/Seoul")))
 }
