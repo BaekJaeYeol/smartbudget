@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -97,22 +98,45 @@ import kotlin.math.roundToInt
 
 private val CalendarIncomeColor = Color(0xFFD94A4A)
 private val CalendarExpenseColor = Color(0xFF3278C7)
-private val CalendarTransferColor = Color(0xFF4B88D8)
 private val CalendarSundayColor = Color(0xFFD94A4A)
 private val CalendarSaturdayColor = Color(0xFF3278C7)
 private const val MONTH_SWIPE_THRESHOLD = 72f
 private const val MONTH_TRANSITION_DURATION_MILLIS = 240
 
-@Composable
-internal fun BudgetBookRoute(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Unit) =
-    BudgetBookOverview(bottomPadding = bottomPadding, onOpenMonth = onOpenMonth)
+internal data class MonthlyTransactionAmounts(val income: Int, val expense: Int)
+
+internal fun monthlyTransactionAmounts(transactions: List<TransactionData>): MonthlyTransactionAmounts =
+    transactions.fold(MonthlyTransactionAmounts(income = 0, expense = 0)) { total, transaction ->
+        when (transaction.type) {
+            TransactionType.INCOME -> total.copy(income = total.income + transaction.amount)
+            TransactionType.EXPENSE -> total.copy(expense = total.expense + transaction.amount)
+        }
+    }
 
 @Composable
-private fun BudgetBookOverview(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Unit) {
+internal fun BudgetBookRoute(
+    bottomPadding: Dp,
+    state: BudgetBookOverviewUiState,
+    onLoad: () -> Unit,
+    onOpenMonth: (YearMonth) -> Unit,
+) {
+    LaunchedEffect(Unit) { onLoad() }
+    BudgetBookOverview(bottomPadding = bottomPadding, state = state, onOpenMonth = onOpenMonth)
+}
+
+@Composable
+private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiState, onOpenMonth: (YearMonth) -> Unit) {
     val currentMonth = YearMonth.now()
+    val currentTransactions = state.transactionsByMonth[currentMonth].orEmpty()
+    val currentTransactionsByDate =
+        remember(currentTransactions) { currentTransactions.groupBy { LocalDate.parse(it.date) } }
+    val previousMonths = remember(currentMonth) { (1L..5L).map(currentMonth::minusMonths) }
     MainTabContainer(bottomPadding = bottomPadding) {
         LedgerCard(
-            modifier = Modifier.clickable { onOpenMonth(currentMonth) },
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable { onOpenMonth(currentMonth) },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -126,33 +150,41 @@ private fun BudgetBookOverview(bottomPadding: Dp, onOpenMonth: (YearMonth) -> Un
                     )
                     Text(monthTitle(currentMonth), fontSize = 21.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    stringResource(R.string.budget_book_view_all),
-                    color = SmartBudgetGreen,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                IconButton(onClick = { onOpenMonth(currentMonth) }) {
+                    Icon(
+                        Icons.Outlined.ChevronRight,
+                        contentDescription = stringResource(R.string.budget_book_view_all),
+                        tint = SmartBudgetGreen,
+                    )
+                }
             }
             Spacer(Modifier.height(16.dp))
-            MonthCalendar(month = currentMonth, compact = true)
-            Spacer(Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                CalendarLegend(CalendarIncomeColor, stringResource(R.string.budget_book_income))
-                CalendarLegend(CalendarExpenseColor, stringResource(R.string.budget_book_expense))
-                CalendarLegend(CalendarTransferColor, stringResource(R.string.budget_book_fixed_cost))
-            }
+            MonthCalendar(
+                month = currentMonth,
+                compact = true,
+                transactionsByDate = currentTransactionsByDate,
+            )
         }
         Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.budget_book_previous_months), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
-        LedgerCard {
-            for (offset in 1L..4L) {
-                val month = currentMonth.minusMonths(offset)
+        LedgerCard(contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)) {
+            Text(
+                stringResource(R.string.budget_book_previous_months),
+                modifier = Modifier.padding(vertical = 4.dp),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            previousMonths.forEachIndexed { index, month ->
+                val transactions = state.transactionsByMonth[month].orEmpty()
+                val amounts = monthlyTransactionAmounts(transactions)
                 PreviousMonthRow(
                     month = month,
-                    income = 3_200_000 - offset.toInt() * 120_000,
-                    expense = 1_150_000 + offset.toInt() * 85_000,
+                    income = amounts.income,
+                    expense = amounts.expense,
                     onClick = { onOpenMonth(month) },
                 )
+                if (index < previousMonths.lastIndex) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -436,7 +468,7 @@ private fun RowScope.CalendarDay(
         horizontalAlignment = Alignment.Start,
     ) {
         CalendarDateLabel(date, compact, isOutsideMonth)
-        if (!compact && !isOutsideMonth) CategoryIndicators(transactions)
+        if (!isOutsideMonth) CategoryIndicators(transactions)
         if (!compact) Spacer(Modifier.weight(1f))
         if (!compact && !isOutsideMonth) DailyAmounts(transactions)
     }
@@ -924,39 +956,44 @@ private fun DailyTransactionRow(transaction: TransactionData) {
 @Composable
 private fun PreviousMonthRow(month: YearMonth, income: Int, expense: Int, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(monthTitle(month), fontWeight = FontWeight.Bold)
+        Text(monthTitle(month), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+        Column(horizontalAlignment = Alignment.End) {
             Text(
                 stringResource(R.string.budget_book_income_amount, income.withComma()),
                 color = CalendarIncomeColor,
                 fontSize = 13.sp,
             )
+            Text(
+                stringResource(R.string.budget_book_expense_amount, expense.withComma()),
+                color = CalendarExpenseColor,
+                fontSize = 13.sp,
+            )
         }
-        Text(stringResource(R.string.budget_book_expense_amount, expense.withComma()), fontWeight = FontWeight.SemiBold)
-        Icon(Icons.Outlined.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            Icons.Outlined.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.padding(start = 10.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
-private fun CalendarLegend(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(7.dp).background(color, CircleShape))
-        Text(label, modifier = Modifier.padding(start = 5.dp), fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun LedgerCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun LedgerCard(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(20.dp),
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(20.dp), content = content)
+        Column(modifier = Modifier.fillMaxWidth().padding(contentPadding), content = content)
     }
 }
 

@@ -94,6 +94,8 @@ internal fun MainScreen(
     onTabSelected: (MainTab) -> Unit,
     settingsState: SettingsUiState,
     onSettingsLoad: () -> Unit,
+    budgetBookState: BudgetBookOverviewUiState,
+    onBudgetBookLoad: () -> Unit,
     onLogout: () -> Unit,
     onOpenDocument: (MarkdownDocument) -> Unit,
     onOpenSettings: (SettingsDetailDestination) -> Unit,
@@ -140,6 +142,8 @@ internal fun MainScreen(
 
                     MainTab.BUDGET_BOOK -> BudgetBookRoute(
                         bottomPadding = innerPadding.calculateBottomPadding(),
+                        state = budgetBookState,
+                        onLoad = onBudgetBookLoad,
                         onOpenMonth = onOpenBudgetBook,
                     )
 

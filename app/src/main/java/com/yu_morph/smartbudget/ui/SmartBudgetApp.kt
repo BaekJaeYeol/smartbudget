@@ -94,6 +94,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                     destination = destination,
                     coordinator = coordinator,
                     settingsCoordinator = settingsCoordinator,
+                    budgetBookCoordinator = budgetBookCoordinator,
                     selectedMainTab = selectedMainTab,
                     onMainTabSelected = { selectedMainTab = it },
                     onDestinationChange = { destination = it },
@@ -193,6 +194,7 @@ private fun AuthenticationContent(
     destination: AppDestination,
     coordinator: AuthCoordinator,
     settingsCoordinator: SettingsCoordinator,
+    budgetBookCoordinator: BudgetBookCoordinator,
     selectedMainTab: MainTab,
     onMainTabSelected: (MainTab) -> Unit,
     onDestinationChange: (AppDestination) -> Unit,
@@ -247,6 +249,8 @@ private fun AuthenticationContent(
                 onTabSelected = onMainTabSelected,
                 settingsState = settingsCoordinator.state,
                 onSettingsLoad = settingsCoordinator::refresh,
+                budgetBookState = budgetBookCoordinator.overviewState,
+                onBudgetBookLoad = { budgetBookCoordinator.loadOverview() },
                 onLogout = {
                     coordinator.signOut()
                     onMainTabSelected(MainTab.HOME)

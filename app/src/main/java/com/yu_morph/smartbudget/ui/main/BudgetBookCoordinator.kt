@@ -12,6 +12,7 @@ import com.yu_morph.smartbudget.data.remote.model.CreateTransactionRequest
 import com.yu_morph.smartbudget.data.remote.model.TransactionData
 import com.yu_morph.smartbudget.data.remote.model.UpdateTransactionRequest
 import com.yu_morph.smartbudget.ui.showAppToast
+import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
@@ -20,6 +21,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private const val TRANSACTION_PAGE_LIMIT = 100
+private const val OVERVIEW_MONTH_COUNT = 6L
+
+data class BudgetBookOverviewUiState(
+    val referenceMonth: YearMonth? = null,
+    val transactionsByMonth: Map<YearMonth, List<TransactionData>> = emptyMap(),
+    val isLoading: Boolean = false,
+)
 
 data class BudgetBookUiState(
     val month: YearMonth? = null,
@@ -31,16 +39,44 @@ data class BudgetBookUiState(
 class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, private val scope: CoroutineScope) {
     private val applicationContext = context.applicationContext
     private var loadJob: Job? = null
+    private var overviewLoadJob: Job? = null
 
     var state by mutableStateOf(BudgetBookUiState())
         private set
+    var overviewState by mutableStateOf(BudgetBookOverviewUiState())
+        private set
+
+    fun loadOverview(referenceMonth: YearMonth = YearMonth.now()) {
+        overviewLoadJob?.cancel()
+        overviewLoadJob = scope.launch {
+            overviewState = overviewState.copy(referenceMonth = referenceMonth, isLoading = true)
+            try {
+                val firstMonth = referenceMonth.minusMonths(OVERVIEW_MONTH_COUNT - 1)
+                val transactions =
+                    loadAllTransactions(firstMonth.atDay(1), referenceMonth.atEndOfMonth()) ?: return@launch
+                overviewState =
+                    BudgetBookOverviewUiState(
+                        referenceMonth = referenceMonth,
+                        transactionsByMonth = groupTransactionsByMonth(transactions),
+                    )
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                applicationContext.showAppToast(R.string.unknown_error)
+            } finally {
+                if (overviewState.referenceMonth == referenceMonth) {
+                    overviewState = overviewState.copy(isLoading = false)
+                }
+            }
+        }
+    }
 
     fun loadMonth(month: YearMonth) {
         loadJob?.cancel()
         loadJob = scope.launch {
             state = state.copy(month = month, transactions = emptyList(), isLoading = true)
             try {
-                val transactions = loadAllTransactions(month) ?: return@launch
+                val transactions = loadAllTransactions(month.atDay(1), month.atEndOfMonth()) ?: return@launch
                 state = state.copy(month = month, transactions = transactions)
             } catch (exception: CancellationException) {
                 throw exception
@@ -76,6 +112,7 @@ class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, p
                     is ApiResult.Success -> {
                         onSuccess()
                         state.month?.let(::loadMonth)
+                        loadOverview()
                     }
 
                     else -> showFailure(result)
@@ -90,7 +127,7 @@ class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, p
         }
     }
 
-    private suspend fun loadAllTransactions(month: YearMonth): List<TransactionData>? {
+    private suspend fun loadAllTransactions(startDate: LocalDate, endDate: LocalDate): List<TransactionData>? {
         val transactions = mutableListOf<TransactionData>()
         var cursor: String? = null
         var succeeded = true
@@ -99,8 +136,8 @@ class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, p
                 val result =
                     api.transactions.list(
                         TransactionListQuery(
-                            startDate = month.atDay(1).toString(),
-                            endDate = month.atEndOfMonth().toString(),
+                            startDate = startDate.toString(),
+                            endDate = endDate.toString(),
                             limit = TRANSACTION_PAGE_LIMIT,
                             cursor = cursor,
                         ),
@@ -139,3 +176,6 @@ class BudgetBookCoordinator(context: Context, private val api: SmartBudgetApi, p
         applicationContext.showAppToast(message)
     }
 }
+
+internal fun groupTransactionsByMonth(transactions: List<TransactionData>): Map<YearMonth, List<TransactionData>> =
+    transactions.groupBy { YearMonth.from(LocalDate.parse(it.date)) }
