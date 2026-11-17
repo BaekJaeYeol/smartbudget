@@ -24,6 +24,13 @@
     <string name="privacy_agreement_suffix">에 동의합니다.</string>
     <string name="already_have_account">이미 계정이 있으신가요? </string>
     <string name="home_tab">홈</string>
+    <string name="home_breaking_news">속보</string>
+    <string name="home_economy_news">경제 뉴스</string>
+    <string name="home_news_more">+ 더보기</string>
+    <string name="home_news_loading">뉴스를 불러오는 중…</string>
+    <string name="home_news_unavailable">뉴스를 불러올 수 없어요.</string>
+    <string name="home_news_thumbnail">%1$s 기사 썸네일</string>
+    <string name="home_news_open_failed">기사 페이지를 열 수 없어요.</string>
     <string name="budget_book_tab">가계부</string>
     <string name="analysis_tab">분석</string>
     <string name="settings_tab">설정</string>

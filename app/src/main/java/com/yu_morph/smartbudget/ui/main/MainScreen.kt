@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.data.remote.news.NewsArticle
 import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.showAppToast
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
@@ -96,6 +97,10 @@ internal fun MainScreen(
     onSettingsLoad: () -> Unit,
     budgetBookState: BudgetBookOverviewUiState,
     onBudgetBookLoad: () -> Unit,
+    homeNewsState: HomeNewsUiState,
+    onHomeNewsLoad: () -> Unit,
+    onShowMoreHomeNews: () -> Unit,
+    onNewsArticleClick: (NewsArticle) -> Unit,
     onLogout: () -> Unit,
     onOpenDocument: (MarkdownDocument) -> Unit,
     onOpenSettings: (SettingsDetailDestination) -> Unit,
@@ -138,7 +143,13 @@ internal fun MainScreen(
                 label = "메인 탭 화면 전환",
             ) { currentTab ->
                 when (currentTab) {
-                    MainTab.HOME -> HomeScreen(bottomPadding = innerPadding.calculateBottomPadding())
+                    MainTab.HOME -> HomeScreen(
+                        bottomPadding = innerPadding.calculateBottomPadding(),
+                        newsState = homeNewsState,
+                        onNewsLoad = onHomeNewsLoad,
+                        onShowMoreNews = onShowMoreHomeNews,
+                        onArticleClick = onNewsArticleClick,
+                    )
 
                     MainTab.BUDGET_BOOK -> BudgetBookRoute(
                         bottomPadding = innerPadding.calculateBottomPadding(),

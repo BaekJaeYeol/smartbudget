@@ -121,7 +121,10 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
             group == "com.google.code.gson" ||
             group == "com.google.crypto.tink" ||
             group == "com.google.guava" ||
+            group == "com.google.accompanist" ||
             group == "com.caverock" ||
+            group == "com.squareup.okio" ||
+            group == "io.coil-kt.coil3" ||
             group == "io.ktor" ||
             group == "org.jetbrains" ||
             group == "org.jetbrains.kotlin" ||
@@ -138,6 +141,8 @@ abstract class GenerateOpenSourceLicensesTask : DefaultTask() {
         group == "com.kizitonwose.calendar" -> "Kizito Nwose 및 기여자"
         group == "com.github.blongho" -> "Bernard Longho 및 기여자"
         group == "com.caverock" -> "Paul LeBeau"
+        group == "com.squareup.okio" -> "Square, Inc. 및 기여자"
+        group == "io.coil-kt.coil3" -> "Coil Contributors"
         group == "io.ktor" -> "JetBrains s.r.o. 및 기여자"
         group == "org.jetbrains" || group.startsWith("org.jetbrains.") -> "JetBrains s.r.o. 및 기여자"
         group == "org.jspecify" -> "JSpecify 기여자"
@@ -283,6 +288,8 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.android.svg)
     implementation(libs.calendar.compose)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.ktor3)
     implementation(libs.world.country.data)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)

@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.yu_morph.smartbudget.R
 import com.yu_morph.smartbudget.data.local.DisplayMode
 import com.yu_morph.smartbudget.data.remote.SmartBudgetApiFactory
 import com.yu_morph.smartbudget.ui.auth.AuthCoordinator
@@ -34,6 +35,7 @@ import com.yu_morph.smartbudget.ui.document.MarkdownDocument
 import com.yu_morph.smartbudget.ui.document.MarkdownViewerScreen
 import com.yu_morph.smartbudget.ui.main.BudgetBookCoordinator
 import com.yu_morph.smartbudget.ui.main.BudgetBookDetailScreen
+import com.yu_morph.smartbudget.ui.main.HomeNewsCoordinator
 import com.yu_morph.smartbudget.ui.main.MainScreen
 import com.yu_morph.smartbudget.ui.main.MainTab
 import com.yu_morph.smartbudget.ui.main.SettingsCoordinator
@@ -66,8 +68,12 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
         SettingsCoordinator(context, api, scope, onDisplayModeChanged, onLanguageChanged)
     }
     val budgetBookCoordinator = remember(context, api, scope) { BudgetBookCoordinator(context, api, scope) }
+    val homeNewsCoordinator = remember(context, scope) { HomeNewsCoordinator(context, scope) }
     DisposableEffect(api) {
         onDispose(api::close)
+    }
+    DisposableEffect(homeNewsCoordinator) {
+        onDispose(homeNewsCoordinator::close)
     }
     BackHandler(enabled = destination == AppDestination.SIGN_UP) {
         destination = AppDestination.LOGIN
@@ -95,6 +101,7 @@ fun SmartBudgetApp(onDisplayModeChanged: (DisplayMode) -> Unit, onLanguageChange
                     coordinator = coordinator,
                     settingsCoordinator = settingsCoordinator,
                     budgetBookCoordinator = budgetBookCoordinator,
+                    homeNewsCoordinator = homeNewsCoordinator,
                     selectedMainTab = selectedMainTab,
                     onMainTabSelected = { selectedMainTab = it },
                     onDestinationChange = { destination = it },
@@ -190,11 +197,13 @@ private fun <S> androidx.compose.animation.AnimatedContentTransitionScope<S>.det
 }
 
 @Composable
+@Suppress("LongMethod")
 private fun AuthenticationContent(
     destination: AppDestination,
     coordinator: AuthCoordinator,
     settingsCoordinator: SettingsCoordinator,
     budgetBookCoordinator: BudgetBookCoordinator,
+    homeNewsCoordinator: HomeNewsCoordinator,
     selectedMainTab: MainTab,
     onMainTabSelected: (MainTab) -> Unit,
     onDestinationChange: (AppDestination) -> Unit,
@@ -203,6 +212,7 @@ private fun AuthenticationContent(
     onOpenBudgetBook: (YearMonth) -> Unit,
     onExit: () -> Unit,
 ) {
+    val context = LocalContext.current
     AnimatedContent(
         targetState = destination,
         transitionSpec = {
@@ -251,6 +261,14 @@ private fun AuthenticationContent(
                 onSettingsLoad = settingsCoordinator::refresh,
                 budgetBookState = budgetBookCoordinator.overviewState,
                 onBudgetBookLoad = { budgetBookCoordinator.loadOverview() },
+                homeNewsState = homeNewsCoordinator.state,
+                onHomeNewsLoad = homeNewsCoordinator::load,
+                onShowMoreHomeNews = homeNewsCoordinator::showMoreEconomyNews,
+                onNewsArticleClick = { article ->
+                    if (!launchAppCustomTab(context, article.link)) {
+                        context.showAppToast(R.string.home_news_open_failed)
+                    }
+                },
                 onLogout = {
                     coordinator.signOut()
                     onMainTabSelected(MainTab.HOME)

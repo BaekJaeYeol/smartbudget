@@ -27,6 +27,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,18 +38,31 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.data.remote.news.NewsArticle
 import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.text.NumberFormat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val ExpenseRed = Color(0xFFEA5A5A)
 private val IncomeBlue = Color(0xFF4B88D8)
 
 @Composable
-internal fun HomeScreen(bottomPadding: Dp) {
+internal fun HomeScreen(
+    bottomPadding: Dp,
+    newsState: HomeNewsUiState,
+    onNewsLoad: () -> Unit,
+    onShowMoreNews: () -> Unit,
+    onArticleClick: (NewsArticle) -> Unit,
+) {
+    LaunchedEffect(Unit) { onNewsLoad() }
     MainTabContainer(bottomPadding = bottomPadding) {
+        NewsCard(
+            state = newsState,
+            onShowMore = onShowMoreNews,
+            onArticleClick = onArticleClick,
+        )
+        Spacer(Modifier.height(14.dp))
         MonthlyOverviewCard()
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

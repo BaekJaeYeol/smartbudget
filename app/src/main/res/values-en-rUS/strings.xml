@@ -24,6 +24,13 @@
     <string name="privacy_agreement_suffix">.</string>
     <string name="already_have_account">Already have an account? </string>
     <string name="home_tab">Home</string>
+    <string name="home_breaking_news">Breaking</string>
+    <string name="home_economy_news">Economy News</string>
+    <string name="home_news_more">+ More</string>
+    <string name="home_news_loading">Loading news…</string>
+    <string name="home_news_unavailable">News is currently unavailable.</string>
+    <string name="home_news_thumbnail">Thumbnail for %1$s</string>
+    <string name="home_news_open_failed">Couldn’t open the article.</string>
     <string name="budget_book_tab">Ledger</string>
     <string name="analysis_tab">Analysis</string>
     <string name="settings_tab">Settings</string>
