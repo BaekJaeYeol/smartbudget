@@ -541,17 +541,17 @@ private fun RowScope.CalendarDay(
 @Composable
 private fun CategoryIndicators(transactions: List<TransactionData>, compact: Boolean) {
     val categories = transactions.distinctBy(TransactionData::category)
-    val indicatorSize = if (compact) 7.dp else 6.dp
+    val topPaddingSize = if (compact) 4.dp else 8.dp
     if (categories.isNotEmpty()) {
         Row(
-            modifier = Modifier.padding(start = 2.dp, top = 8.dp),
+            modifier = Modifier.padding(start = 2.dp, top = topPaddingSize),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             categories.forEach { transaction ->
                 Box(
                     modifier =
                         Modifier
-                            .size(indicatorSize)
+                            .size(6.dp)
                             .clip(CircleShape)
                             .background(transactionCategoryUi(transaction.category).color),
                 )
@@ -1132,7 +1132,7 @@ private fun MonthlyMetric(
     alignValueToBottom: Boolean = false,
 ) {
     Surface(
-        modifier = modifier.height(74.dp),
+        modifier = modifier.height(70.dp),
         shape = RoundedCornerShape(14.dp),
         color = overviewCalendarBackground(),
     ) {
