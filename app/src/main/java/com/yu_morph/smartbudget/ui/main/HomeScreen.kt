@@ -61,19 +61,31 @@ internal fun HomeScreen(
     MainTabContainer(bottomPadding = bottomPadding) {
         MonthlyOverviewCard(dashboardState)
         Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard(
-                label = stringResource(R.string.home_monthly_income),
-                amount = dashboardState.income,
-                indicatorColor = ExpenseRed,
+        Row(
+            modifier = Modifier.fillMaxWidth().height(190.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SpendingTemperatureCard(
+                temperature = dashboardState.spendingTemperature,
                 modifier = Modifier.weight(1f),
             )
-            SummaryCard(
-                label = stringResource(R.string.home_monthly_expense),
-                amount = dashboardState.expense,
-                indicatorColor = IncomeBlue,
-                modifier = Modifier.weight(1f),
-            )
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                SummaryCard(
+                    label = stringResource(R.string.home_monthly_income),
+                    amount = dashboardState.income,
+                    indicatorColor = ExpenseRed,
+                    modifier = Modifier.weight(1f),
+                )
+                SummaryCard(
+                    label = stringResource(R.string.home_monthly_expense),
+                    amount = dashboardState.expense,
+                    indicatorColor = IncomeBlue,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
         Spacer(Modifier.height(14.dp))
         NewsCard(

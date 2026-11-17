@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.Color
 import com.yu_morph.smartbudget.data.remote.model.TransactionData
 import com.yu_morph.smartbudget.data.remote.model.TransactionSource
 import com.yu_morph.smartbudget.data.remote.model.TransactionType
+import java.time.LocalDate
+import java.time.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -29,12 +31,63 @@ class HomeDashboardCoordinatorTest {
         assertEquals(Color(0xFFEB5757), budgetUsageColor(1.2f))
     }
 
-    private fun transaction(id: Int, type: TransactionType, amount: Int) = TransactionData(
+    @Test
+    fun `예산 초과와 불필요 카테고리 소비가 많으면 소비 온도가 낮아진다`() {
+        val month = YearMonth.of(2026, 11)
+        val healthy =
+            calculateSpendingTemperature(
+                transactions =
+                    listOf(
+                        transaction(
+                            id = 1,
+                            type = TransactionType.EXPENSE,
+                            amount = 90_000,
+                            category = "housing_utilities",
+                            date = "2026-11-03",
+                        ),
+                    ),
+                budget = 1_000_000,
+                month = month,
+                today = LocalDate.of(2026, 11, 15),
+            )
+        val unhealthy =
+            calculateSpendingTemperature(
+                transactions =
+                    listOf(
+                        transaction(2, TransactionType.EXPENSE, 600_000, "shopping", "2026-11-01"),
+                        transaction(3, TransactionType.EXPENSE, 700_000, "leisure", "2026-11-02"),
+                        transaction(4, TransactionType.EXPENSE, 500_000, "other_expense", "2026-11-03"),
+                    ),
+                budget = 1_000_000,
+                month = month,
+                today = LocalDate.of(2026, 11, 15),
+            )
+
+        assertEquals(SpendingTemperatureLevel.GOOD, spendingTemperatureLevel(healthy))
+        assertEquals(SpendingTemperatureLevel.BAD, spendingTemperatureLevel(unhealthy))
+    }
+
+    @Test
+    fun `소비 온도 경계값을 상태로 변환한다`() {
+        assertEquals(SpendingTemperatureLevel.BAD, spendingTemperatureLevel(32.0))
+        assertEquals(SpendingTemperatureLevel.NOT_GOOD, spendingTemperatureLevel(32.1))
+        assertEquals(SpendingTemperatureLevel.OKAY, spendingTemperatureLevel(35.1))
+        assertEquals(SpendingTemperatureLevel.GOOD, spendingTemperatureLevel(37.1))
+        assertEquals(SpendingTemperatureLevel.AMAZING, spendingTemperatureLevel(39.1))
+    }
+
+    private fun transaction(
+        id: Int,
+        type: TransactionType,
+        amount: Int,
+        category: String = "food",
+        date: String = "2026-11-17",
+    ) = TransactionData(
         id = id,
-        date = "2026-11-17",
+        date = date,
         type = type,
         source = TransactionSource.MANUAL,
-        category = "food",
+        category = category,
         amount = amount,
         createdAt = "2026-11-17T10:00:00+09:00",
         updatedAt = "2026-11-17T10:00:00+09:00",

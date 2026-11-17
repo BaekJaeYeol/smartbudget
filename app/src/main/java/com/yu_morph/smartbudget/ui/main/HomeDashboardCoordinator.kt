@@ -27,6 +27,7 @@ data class HomeDashboardUiState(
     val income: Int = 0,
     val expense: Int = 0,
     val budget: Int = DEFAULT_MONTHLY_BUDGET,
+    val spendingTemperature: Double = 36.5,
     val isLoading: Boolean = false,
 )
 
@@ -50,11 +51,20 @@ class HomeDashboardCoordinator(context: Context, private val api: SmartBudgetApi
                     transactionRequest.await() to budgetRequest.await()
                 }
                 val amounts = transactions?.let(::summarizeHomeTransactions)
+                val resolvedBudget = budget ?: state.budget
                 state =
                     state.copy(
                         income = amounts?.income ?: state.income,
                         expense = amounts?.expense ?: state.expense,
-                        budget = budget ?: state.budget,
+                        budget = resolvedBudget,
+                        spendingTemperature =
+                            transactions?.let {
+                                calculateSpendingTemperature(
+                                    transactions = it,
+                                    budget = resolvedBudget,
+                                    month = month,
+                                )
+                            } ?: state.spendingTemperature,
                     )
             } catch (exception: CancellationException) {
                 throw exception

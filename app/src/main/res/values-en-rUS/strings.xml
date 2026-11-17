@@ -159,6 +159,13 @@
     <string name="home_greeting_subtitle">Take a quick look at your budget today.</string>
     <string name="home_monthly_income">Income this month</string>
     <string name="home_monthly_expense">Spending this month</string>
+    <string name="home_spending_temperature">Spending temperature</string>
+    <string name="home_spending_temperature_bad">Bad</string>
+    <string name="home_spending_temperature_not_good">Not good</string>
+    <string name="home_spending_temperature_okay">Okay</string>
+    <string name="home_spending_temperature_good">Good</string>
+    <string name="home_spending_temperature_amazing">Amazing</string>
+    <string name="home_spending_temperature_description">Spending temperature %1$s, %2$s</string>
     <string name="home_monthly_spending">Spending in month %1$d</string>
     <string name="home_budget_progress">Used %2$s of the %1$s monthly budget</string>
     <string name="home_remaining_budget">Remaining budget</string>
