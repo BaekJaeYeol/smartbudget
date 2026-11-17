@@ -69,6 +69,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -1131,7 +1132,7 @@ private fun MonthlyMetric(
     alignValueToBottom: Boolean = false,
 ) {
     Surface(
-        modifier = modifier.height(88.dp),
+        modifier = modifier.height(74.dp),
         shape = RoundedCornerShape(14.dp),
         color = overviewCalendarBackground(),
     ) {
@@ -1142,12 +1143,14 @@ private fun MonthlyMetric(
                 fontSize = 11.sp,
                 lineHeight = 11.sp,
             )
+            Spacer(Modifier.height(2.dp))
             if (alignValueToBottom) Spacer(Modifier.weight(1f))
             Text(
                 value,
                 modifier = Modifier.fillMaxWidth(),
                 color = valueColor,
                 fontSize = 14.sp,
+                lineHeight = 14.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = valueTextAlign,
             )
@@ -1195,17 +1198,18 @@ private fun CategoryStatisticsTags(title: String, tags: List<CategoryStatTag>) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(category.label),
+                                color = category.color,
                                 fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
                                 lineHeight = 10.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 tag.value,
-                                color = category.color,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
                                 lineHeight = 10.sp,
+                                modifier = Modifier.alpha(0.8f)
                             )
                         }
                     }
