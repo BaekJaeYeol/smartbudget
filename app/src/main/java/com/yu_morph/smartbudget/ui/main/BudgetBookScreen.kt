@@ -1026,13 +1026,13 @@ private fun PreviousMonthRow(month: YearMonth, stats: MonthlyLedgerStats, onClic
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(4.dp))
                 .clickable(onClick = onClick)
                 .padding(vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(monthTitle(month), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+            Text(monthTitle(month), modifier = Modifier.weight(1f).padding(start = 8.dp), fontWeight = FontWeight.Bold)
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     stringResource(R.string.budget_book_income_amount, stats.amounts.income.withComma()),
