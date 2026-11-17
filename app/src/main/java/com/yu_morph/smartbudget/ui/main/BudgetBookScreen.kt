@@ -105,6 +105,18 @@ private const val MONTH_TRANSITION_DURATION_MILLIS = 240
 
 internal data class MonthlyTransactionAmounts(val income: Int, val expense: Int)
 
+internal data class CategoryOccurrenceStat(val category: String, val count: Int)
+
+internal data class CategoryAmountStat(val category: String, val amount: Int)
+
+internal data class MonthlyLedgerStats(
+    val amounts: MonthlyTransactionAmounts,
+    val frequentExpenseCategories: List<CategoryOccurrenceStat>,
+    val largestExpenseCategories: List<CategoryAmountStat>,
+    val expenseRatioPercent: Int?,
+    val expenseChange: Int,
+)
+
 internal fun monthlyTransactionAmounts(transactions: List<TransactionData>): MonthlyTransactionAmounts =
     transactions.fold(MonthlyTransactionAmounts(income = 0, expense = 0)) { total, transaction ->
         when (transaction.type) {
@@ -112,6 +124,38 @@ internal fun monthlyTransactionAmounts(transactions: List<TransactionData>): Mon
             TransactionType.EXPENSE -> total.copy(expense = total.expense + transaction.amount)
         }
     }
+
+internal fun monthlyLedgerStats(
+    transactions: List<TransactionData>,
+    previousMonthTransactions: List<TransactionData>,
+): MonthlyLedgerStats {
+    val amounts = monthlyTransactionAmounts(transactions)
+    val previousAmounts = monthlyTransactionAmounts(previousMonthTransactions)
+    val expenses = transactions.filter { it.type == TransactionType.EXPENSE }
+    val frequentCategories =
+        expenses
+            .groupingBy(TransactionData::category)
+            .eachCount()
+            .map { (category, count) -> CategoryOccurrenceStat(category, count) }
+            .sortedWith(compareByDescending<CategoryOccurrenceStat> { it.count }.thenBy { it.category })
+            .take(3)
+    val largestCategories =
+        expenses
+            .groupBy(TransactionData::category)
+            .map { (category, items) -> CategoryAmountStat(category, items.sumOf(TransactionData::amount)) }
+            .sortedWith(compareByDescending<CategoryAmountStat> { it.amount }.thenBy { it.category })
+            .take(3)
+    return MonthlyLedgerStats(
+        amounts = amounts,
+        frequentExpenseCategories = frequentCategories,
+        largestExpenseCategories = largestCategories,
+        expenseRatioPercent =
+            amounts.income.takeIf { it > 0 }?.let { income ->
+                ((amounts.expense.toLong() * 100) / income).toInt()
+            },
+        expenseChange = amounts.expense - previousAmounts.expense,
+    )
+}
 
 @Composable
 internal fun BudgetBookRoute(
@@ -137,7 +181,7 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
                 Modifier
                     .clip(RoundedCornerShape(24.dp))
                     .clickable { onOpenMonth(currentMonth) },
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 12.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 20.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
@@ -165,7 +209,7 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .background(overviewCalendarBackground())
                         .padding(12.dp),
             ) {
@@ -187,11 +231,14 @@ private fun BudgetBookOverview(bottomPadding: Dp, state: BudgetBookOverviewUiSta
             )
             previousMonths.forEachIndexed { index, month ->
                 val transactions = state.transactionsByMonth[month].orEmpty()
-                val amounts = monthlyTransactionAmounts(transactions)
+                val stats =
+                    monthlyLedgerStats(
+                        transactions = transactions,
+                        previousMonthTransactions = state.transactionsByMonth[month.minusMonths(1)].orEmpty(),
+                    )
                 PreviousMonthRow(
                     month = month,
-                    income = amounts.income,
-                    expense = amounts.expense,
+                    stats = stats,
                     onClick = { onOpenMonth(month) },
                 )
                 if (index < previousMonths.lastIndex) {
@@ -420,7 +467,7 @@ private fun MonthCalendar(
                 )
             }
         }
-        if (!compact) HorizontalDivider(thickness = 0.5.dp, color = borderColor)
+        HorizontalDivider(thickness = 0.5.dp, color = borderColor)
         days.chunked(7).forEach { week ->
             Row(
                 modifier =
@@ -968,30 +1015,161 @@ private fun DailyTransactionRow(transaction: TransactionData) {
 }
 
 @Composable
-private fun PreviousMonthRow(month: YearMonth, income: Int, expense: Int, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun PreviousMonthRow(month: YearMonth, stats: MonthlyLedgerStats, onClick: () -> Unit) {
+    val languageTag = LocalConfiguration.current.locales[0].toLanguageTag()
+    Column(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(monthTitle(month), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                stringResource(R.string.budget_book_income_amount, income.withComma()),
-                color = CalendarIncomeColor,
-                fontSize = 13.sp,
-            )
-            Text(
-                stringResource(R.string.budget_book_expense_amount, expense.withComma()),
-                color = CalendarExpenseColor,
-                fontSize = 13.sp,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(monthTitle(month), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    stringResource(R.string.budget_book_income_amount, stats.amounts.income.withComma()),
+                    color = CalendarIncomeColor,
+                    fontSize = 13.sp,
+                )
+                Text(
+                    stringResource(R.string.budget_book_expense_amount, stats.amounts.expense.withComma()),
+                    color = CalendarExpenseColor,
+                    fontSize = 13.sp,
+                )
+            }
+            Icon(
+                Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.padding(start = 10.dp),
+                tint = SettingsChevronColor,
             )
         }
-        Icon(
-            Icons.Outlined.ChevronRight,
-            contentDescription = null,
-            modifier = Modifier.padding(start = 10.dp),
-            tint = SettingsChevronColor,
+        MonthlyMetrics(stats)
+        if (stats.frequentExpenseCategories.isNotEmpty()) {
+            CategoryStatisticsTags(
+                title = stringResource(R.string.budget_book_frequent_expense_categories),
+                tags =
+                    stats.frequentExpenseCategories.map { stat ->
+                        CategoryStatTag(
+                            category = stat.category,
+                            value = stringResource(R.string.budget_book_category_occurrences, stat.count),
+                        )
+                    },
+            )
+        }
+        if (stats.largestExpenseCategories.isNotEmpty()) {
+            CategoryStatisticsTags(
+                title = stringResource(R.string.budget_book_largest_expense_categories),
+                tags =
+                    stats.largestExpenseCategories.map { stat ->
+                        CategoryStatTag(
+                            category = stat.category,
+                            value =
+                                stringResource(
+                                    R.string.budget_book_currency_amount,
+                                    formatCalendarAmount(stat.amount, languageTag).removePrefix("+"),
+                                ),
+                        )
+                    },
+            )
+        }
+    }
+}
+
+private data class CategoryStatTag(val category: String, val value: String)
+
+@Composable
+private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
+    val ratio = stats.expenseRatioPercent
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MonthlyMetric(
+            modifier = Modifier.weight(1f),
+            label = stringResource(R.string.budget_book_income_expense_ratio),
+            value = ratio?.let { "$it%" } ?: stringResource(R.string.budget_book_no_income_ratio),
+            valueColor = MaterialTheme.colorScheme.onSurface,
+            progress = ratio?.div(100f)?.coerceIn(0f, 1f),
         )
+        MonthlyMetric(
+            modifier = Modifier.weight(1f),
+            label = stringResource(R.string.budget_book_expense_change),
+            value = stringResource(R.string.budget_book_currency_amount, stats.expenseChange.withSignedComma()),
+            valueColor =
+                if (stats.expenseChange > 0) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    SmartBudgetGreen
+                },
+        )
+    }
+}
+
+@Composable
+private fun MonthlyMetric(
+    modifier: Modifier,
+    label: String,
+    value: String,
+    valueColor: Color,
+    progress: Float? = null,
+) {
+    Surface(
+        modifier = modifier.heightIn(min = 72.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = calendarMutedBackground(),
+    ) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            progress?.let {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(it)
+                                .fillMaxHeight()
+                                .background(SmartBudgetGreen, CircleShape),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryStatisticsTags(title: String, tags: List<CategoryStatTag>) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            tags.forEach { tag ->
+                val category = transactionCategoryUi(tag.category)
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = category.color.copy(alpha = 0.12f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 7.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(category.icon, null, modifier = Modifier.size(15.dp), tint = category.color)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(category.label),
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(tag.value, color = category.color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -37,12 +37,39 @@ class BudgetBookOverviewTest {
         )
     }
 
-    private fun transaction(id: Int, date: String = "2026-11-01", type: TransactionType, amount: Int) = TransactionData(
+    @Test
+    fun `이전 월 통계는 지출 카테고리를 순위별로 집계한다`() {
+        val transactions =
+            listOf(
+                transaction(id = 1, type = TransactionType.INCOME, amount = 100_000),
+                transaction(id = 2, type = TransactionType.EXPENSE, category = "food", amount = 10_000),
+                transaction(id = 3, type = TransactionType.EXPENSE, category = "food", amount = 20_000),
+                transaction(id = 4, type = TransactionType.EXPENSE, category = "transport", amount = 50_000),
+                transaction(id = 5, type = TransactionType.EXPENSE, category = "shopping", amount = 5_000),
+            )
+        val previous =
+            listOf(transaction(id = 6, type = TransactionType.EXPENSE, category = "food", amount = 60_000))
+
+        val stats = monthlyLedgerStats(transactions, previous)
+
+        assertEquals(85, stats.expenseRatioPercent)
+        assertEquals(25_000, stats.expenseChange)
+        assertEquals(CategoryOccurrenceStat("food", 2), stats.frequentExpenseCategories.first())
+        assertEquals(CategoryAmountStat("transport", 50_000), stats.largestExpenseCategories.first())
+    }
+
+    private fun transaction(
+        id: Int,
+        date: String = "2026-11-01",
+        type: TransactionType,
+        category: String = if (type == TransactionType.INCOME) "salary" else "food",
+        amount: Int,
+    ) = TransactionData(
         id = id,
         date = date,
         type = type,
         source = TransactionSource.MANUAL,
-        category = if (type == TransactionType.INCOME) "salary" else "food",
+        category = category,
         amount = amount,
         createdAt = "2026-11-01T00:00:00+09:00",
         updatedAt = "2026-11-01T00:00:00+09:00",
