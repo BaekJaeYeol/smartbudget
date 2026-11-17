@@ -1019,7 +1019,12 @@ private fun DailyTransactionRow(transaction: TransactionData) {
 private fun PreviousMonthRow(month: YearMonth, stats: MonthlyLedgerStats, onClick: () -> Unit) {
     val languageTag = LocalConfiguration.current.locales[0].toLanguageTag()
     Column(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .clickable(onClick = onClick)
+                .padding(vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1105,7 +1110,7 @@ private fun MonthlyMetrics(stats: MonthlyLedgerStats) {
                 stats.expenseChange < 0 -> CalendarIncomeColor
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
-            valueTextAlign = TextAlign.End,
+            valueTextAlign = TextAlign.Start,
             alignValueToBottom = true,
         )
     }
@@ -1129,7 +1134,6 @@ private fun MonthlyMetric(
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-            Spacer(Modifier.height(2.dp))
             if (alignValueToBottom) Spacer(Modifier.weight(1f))
             Text(
                 value,
