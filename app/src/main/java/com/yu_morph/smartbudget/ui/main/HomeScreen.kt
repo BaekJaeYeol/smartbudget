@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,31 +62,19 @@ internal fun HomeScreen(
     MainTabContainer(bottomPadding = bottomPadding) {
         MonthlyOverviewCard(dashboardState)
         Spacer(Modifier.height(14.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().height(190.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SpendingTemperatureCard(
-                temperature = dashboardState.spendingTemperature,
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SummaryCard(
+                label = stringResource(R.string.home_monthly_income),
+                amount = dashboardState.income,
+                indicatorColor = ExpenseRed,
                 modifier = Modifier.weight(1f),
             )
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                SummaryCard(
-                    label = stringResource(R.string.home_monthly_income),
-                    amount = dashboardState.income,
-                    indicatorColor = ExpenseRed,
-                    modifier = Modifier.weight(1f),
-                )
-                SummaryCard(
-                    label = stringResource(R.string.home_monthly_expense),
-                    amount = dashboardState.expense,
-                    indicatorColor = IncomeBlue,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            SummaryCard(
+                label = stringResource(R.string.home_monthly_expense),
+                amount = dashboardState.expense,
+                indicatorColor = IncomeBlue,
+                modifier = Modifier.weight(1f),
+            )
         }
         Spacer(Modifier.height(14.dp))
         NewsCard(
@@ -105,40 +94,55 @@ private fun MonthlyOverviewCard(state: HomeDashboardUiState) {
     val percentFormat = NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0]).apply {
         maximumFractionDigits = 1
     }
-    DashboardCard {
-        Text(
-            stringResource(R.string.home_monthly_spending, state.month.monthValue),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(formatHomeAmount(state.expense), fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(
-                R.string.home_budget_progress,
-                formatHomeAmount(state.budget),
-                percentFormat.format(progress),
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-        )
-        Spacer(Modifier.height(12.dp))
-        BudgetUsageBar(progress = progress, progressColor = progressColor)
-        Spacer(Modifier.height(9.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                stringResource(R.string.home_remaining_budget),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                Text(
+                    stringResource(R.string.home_monthly_spending, state.month.monthValue),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(formatHomeAmount(state.expense), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(
+                        R.string.home_budget_progress,
+                        formatHomeAmount(state.budget),
+                        percentFormat.format(progress),
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                )
+                Spacer(Modifier.height(12.dp))
+                BudgetUsageBar(progress = progress, progressColor = progressColor)
+                Spacer(Modifier.height(9.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(R.string.home_remaining_budget),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                    )
+                    Text(
+                        formatHomeAmount((state.budget - state.expense).coerceAtLeast(0)),
+                        color = progressColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
             )
-            Text(
-                formatHomeAmount((state.budget - state.expense).coerceAtLeast(0)),
-                color = progressColor,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            SpendingTemperatureRow(temperature = state.spendingTemperature)
         }
     }
 }
