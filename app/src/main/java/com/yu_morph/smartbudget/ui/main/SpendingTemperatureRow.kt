@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -70,9 +71,12 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.offset(x = (-15).dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.DeviceThermostat,
                     contentDescription = null,
@@ -94,15 +98,13 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
         }
         TemperatureGradientBar(
             position = spendingTemperaturePosition(temperature),
-            markerColor = appearance.accentColor,
         )
     }
 }
 
 @Composable
-private fun TemperatureGradientBar(position: Float, markerColor: Color) {
+private fun TemperatureGradientBar(position: Float) {
     val markerBorderColor = MaterialTheme.colorScheme.surface
-    val markerHaloColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
     Canvas(modifier = Modifier.fillMaxWidth().height(20.dp)) {
         val markerRadius = 7.5.dp.toPx()
         val innerRadius = 5.5.dp.toPx()
@@ -133,13 +135,9 @@ private fun TemperatureGradientBar(position: Float, markerColor: Color) {
         val markerX =
             (barStart + barWidth * position.coerceIn(0f, 1f))
                 .coerceIn(markerRadius, size.width - markerRadius)
-        drawCircle(
-            color = markerHaloColor,
-            radius = markerRadius + 2.dp.toPx(),
-            center = Offset(markerX, centerY + 1.dp.toPx()),
-        )
+        val markerBackgroundColor = temperatureGradientColor(position)
         drawCircle(color = markerBorderColor, radius = markerRadius, center = Offset(markerX, centerY))
-        drawCircle(color = markerColor.copy(alpha = 0.78f), radius = innerRadius, center = Offset(markerX, centerY))
+        drawCircle(color = markerBackgroundColor, radius = innerRadius, center = Offset(markerX, centerY))
         drawCircle(
             color = Color.White.copy(alpha = 0.74f),
             radius = 1.8.dp.toPx(),
@@ -152,6 +150,23 @@ private fun TemperatureGradientBar(position: Float, markerColor: Color) {
             style = Stroke(width = 1.dp.toPx()),
         )
     }
+}
+
+private fun temperatureGradientColor(position: Float): Color {
+    val boundedPosition = position.coerceIn(0f, 1f)
+    val stops =
+        listOf(
+            0f to Color(0xFF397FC2),
+            0.25f to Color(0xFF5C9FD5),
+            0.5f to SmartBudgetGreen,
+            0.72f to Color(0xFFF08A38),
+            1f to Color(0xFFE94C64),
+        )
+    val upperIndex = stops.indexOfFirst { boundedPosition <= it.first }.coerceAtLeast(1)
+    val lowerStop = stops[upperIndex - 1]
+    val upperStop = stops[upperIndex]
+    val fraction = (boundedPosition - lowerStop.first) / (upperStop.first - lowerStop.first)
+    return androidx.compose.ui.graphics.lerp(lowerStop.second, upperStop.second, fraction)
 }
 
 internal fun spendingTemperaturePosition(temperature: Double): Float = when {
