@@ -76,6 +76,13 @@ class HomeDashboardCoordinatorTest {
         assertEquals(SpendingTemperatureLevel.AMAZING, spendingTemperatureLevel(39.1))
     }
 
+    @Test
+    fun `소비 온도 표시 바는 정상 체온을 중앙에 배치한다`() {
+        assertEquals(0f, spendingTemperaturePosition(28.0), 0.0001f)
+        assertEquals(0.5f, spendingTemperaturePosition(36.5), 0.0001f)
+        assertEquals(1f, spendingTemperaturePosition(42.0), 0.0001f)
+    }
+
     private fun transaction(
         id: Int,
         type: TransactionType,

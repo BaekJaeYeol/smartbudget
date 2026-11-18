@@ -4,24 +4,25 @@ package com.yu_morph.smartbudget.ui.main
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -31,9 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yu_morph.smartbudget.R
+import com.yu_morph.smartbudget.ui.theme.SmartBudgetGreen
 import java.util.Locale
 
 private const val GAUGE_MINIMUM_TEMPERATURE = 28.0
+private const val GAUGE_NORMAL_TEMPERATURE = 36.5
 private const val GAUGE_MAXIMUM_TEMPERATURE = 42.0
 
 private data class TemperatureAppearance(
@@ -48,65 +51,104 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
     val label = stringResource(appearance.label)
     val formattedTemperature = String.format(Locale.US, "%.1f°C", temperature)
     val description = stringResource(R.string.home_spending_temperature_description, formattedTemperature, label)
-    val progress =
-        ((temperature - GAUGE_MINIMUM_TEMPERATURE) / (GAUGE_MAXIMUM_TEMPERATURE - GAUGE_MINIMUM_TEMPERATURE))
-            .coerceIn(0.0, 1.0)
-            .toFloat()
-    Row(
+    Column(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .semantics { contentDescription = description },
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(appearance.face),
-            contentDescription = null,
-            modifier = Modifier.size(38.dp),
+        Text(
+            text = stringResource(R.string.home_spending_temperature),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
         )
-        Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
-            Text(
-                text = stringResource(R.string.home_spending_temperature),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(4.dp))
-            TemperatureProgressBar(progress = progress, color = appearance.accentColor)
-        }
-        Column(
-            modifier = Modifier.padding(start = 12.dp),
-            horizontalAlignment = Alignment.End,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(formattedTemperature, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Text(
-                text = label,
+                text = formattedTemperature,
                 color = appearance.accentColor,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Image(
+                painter = painterResource(appearance.face),
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
             )
         }
+        Spacer(Modifier.height(2.dp))
+        TemperatureGradientBar(
+            position = spendingTemperaturePosition(temperature),
+            markerColor = appearance.accentColor,
+        )
     }
 }
 
 @Composable
-private fun TemperatureProgressBar(progress: Float, color: Color) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(5.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .background(color),
+private fun TemperatureGradientBar(position: Float, markerColor: Color) {
+    val markerBorderColor = MaterialTheme.colorScheme.surface
+    val centerMarkerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
+    Canvas(modifier = Modifier.fillMaxWidth().height(14.dp)) {
+        val markerRadius = 5.5.dp.toPx()
+        val innerRadius = 3.5.dp.toPx()
+        val barHeight = 6.dp.toPx()
+        val barStart = markerRadius
+        val barWidth = size.width - markerRadius * 2f
+        val barTop = (size.height - barHeight) / 2f
+        val centerY = size.height / 2f
+        val gradient =
+            Brush.horizontalGradient(
+                colorStops =
+                    arrayOf(
+                        0f to Color(0xFF397FC2),
+                        0.25f to Color(0xFF5C9FD5),
+                        0.5f to SmartBudgetGreen,
+                        0.72f to Color(0xFFF08A38),
+                        1f to Color(0xFFE94C64),
+                    ),
+                startX = barStart,
+                endX = barStart + barWidth,
+            )
+        drawRoundRect(
+            brush = gradient,
+            topLeft = Offset(barStart, barTop),
+            size = Size(barWidth, barHeight),
+            cornerRadius = CornerRadius(barHeight / 2f),
         )
+        drawLine(
+            color = centerMarkerColor,
+            start = Offset(size.width / 2f, barTop - 1.dp.toPx()),
+            end = Offset(size.width / 2f, barTop + barHeight + 1.dp.toPx()),
+            strokeWidth = 1.dp.toPx(),
+        )
+        val markerX = barStart + barWidth * position.coerceIn(0f, 1f)
+        drawCircle(color = markerBorderColor, radius = markerRadius, center = Offset(markerX, centerY))
+        drawCircle(color = markerColor, radius = innerRadius, center = Offset(markerX, centerY))
+    }
+}
+
+internal fun spendingTemperaturePosition(temperature: Double): Float = when {
+    temperature <= GAUGE_NORMAL_TEMPERATURE -> {
+        val lowerProgress =
+            (
+                (temperature - GAUGE_MINIMUM_TEMPERATURE) /
+                    (GAUGE_NORMAL_TEMPERATURE - GAUGE_MINIMUM_TEMPERATURE)
+                ).coerceIn(0.0, 1.0)
+        (lowerProgress * 0.5).toFloat()
+    }
+
+    else -> {
+        val upperProgress =
+            (
+                (temperature - GAUGE_NORMAL_TEMPERATURE) /
+                    (GAUGE_MAXIMUM_TEMPERATURE - GAUGE_NORMAL_TEMPERATURE)
+                ).coerceIn(0.0, 1.0)
+        (0.5 + upperProgress * 0.5).toFloat()
     }
 }
 
