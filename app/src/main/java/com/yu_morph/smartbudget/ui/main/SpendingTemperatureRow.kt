@@ -50,7 +50,7 @@ private data class TemperatureAppearance(
 )
 
 @Composable
-internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Modifier) {
+internal fun SpendingTemperatureRow(temperature: Double, displayName: String, modifier: Modifier = Modifier) {
     val appearance = spendingTemperatureLevel(temperature).appearance()
     val label = stringResource(appearance.label)
     val formattedTemperature = String.format(Locale.US, "%.1f°C", temperature)
@@ -63,7 +63,7 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
                 .semantics { contentDescription = description },
     ) {
         Text(
-            text = stringResource(R.string.home_spending_temperature),
+            text = stringResource(R.string.home_spending_temperature, displayName),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
@@ -74,7 +74,7 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
             verticalAlignment = Alignment.Bottom,
         ) {
             Row(
-                modifier = Modifier.offset(x = (-15).dp),
+                modifier = Modifier.padding(bottom = 8.dp).offset(x = -6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(

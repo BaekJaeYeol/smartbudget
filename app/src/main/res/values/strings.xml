@@ -159,7 +159,7 @@
     <string name="home_greeting_subtitle">오늘도 가볍게 예산을 확인해 보세요.</string>
     <string name="home_monthly_income">이번 달 수입</string>
     <string name="home_monthly_expense">이번 달 지출</string>
-    <string name="home_spending_temperature">소비 온도</string>
+    <string name="home_spending_temperature">%1$s님의 소비 온도</string>
     <string name="home_spending_temperature_bad">나빠요</string>
     <string name="home_spending_temperature_not_good">안 좋아요</string>
     <string name="home_spending_temperature_okay">괜찮아요</string>

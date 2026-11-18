@@ -149,8 +149,10 @@ internal fun MainScreen(
                     MainTab.HOME -> HomeScreen(
                         bottomPadding = innerPadding.calculateBottomPadding(),
                         dashboardState = homeDashboardState,
+                        displayName = settingsState.displayName,
                         newsState = homeNewsState,
                         onDashboardLoad = onHomeDashboardLoad,
+                        onProfileLoad = onSettingsLoad,
                         onNewsLoad = onHomeNewsLoad,
                         onPreviousNewsPage = onPreviousHomeNewsPage,
                         onNextNewsPage = onNextHomeNewsPage,
