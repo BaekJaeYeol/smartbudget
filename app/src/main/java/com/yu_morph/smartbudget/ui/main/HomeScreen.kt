@@ -184,9 +184,9 @@ private fun SummaryCard(label: String, amount: Int, indicatorColor: Color, modif
                 modifier = Modifier.padding(start = 7.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
             )
         }
-        Spacer(Modifier.height(7.dp))
         Text(formatHomeAmount(amount), fontSize = 16.sp, fontWeight = FontWeight.Bold)
     }
 }
