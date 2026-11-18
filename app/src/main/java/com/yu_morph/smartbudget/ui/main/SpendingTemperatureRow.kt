@@ -9,11 +9,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DeviceThermostat
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -55,7 +58,7 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
                 .semantics { contentDescription = description },
     ) {
         Text(
@@ -69,19 +72,26 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = formattedTemperature,
-                color = appearance.accentColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.DeviceThermostat,
+                    contentDescription = null,
+                    tint = appearance.accentColor,
+                    modifier = Modifier.size(22.dp),
+                )
+                Text(
+                    text = formattedTemperature,
+                    color = appearance.accentColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Image(
                 painter = painterResource(appearance.face),
                 contentDescription = null,
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(48.dp),
             )
         }
-        Spacer(Modifier.height(2.dp))
         TemperatureGradientBar(
             position = spendingTemperaturePosition(temperature),
             markerColor = appearance.accentColor,
@@ -92,13 +102,13 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
 @Composable
 private fun TemperatureGradientBar(position: Float, markerColor: Color) {
     val markerBorderColor = MaterialTheme.colorScheme.surface
-    val centerMarkerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
-    Canvas(modifier = Modifier.fillMaxWidth().height(14.dp)) {
-        val markerRadius = 5.5.dp.toPx()
-        val innerRadius = 3.5.dp.toPx()
-        val barHeight = 6.dp.toPx()
-        val barStart = markerRadius
-        val barWidth = size.width - markerRadius * 2f
+    val markerHaloColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
+    Canvas(modifier = Modifier.fillMaxWidth().height(20.dp)) {
+        val markerRadius = 7.5.dp.toPx()
+        val innerRadius = 5.5.dp.toPx()
+        val barHeight = 9.dp.toPx()
+        val barStart = 0f
+        val barWidth = size.width
         val barTop = (size.height - barHeight) / 2f
         val centerY = size.height / 2f
         val gradient =
@@ -120,15 +130,27 @@ private fun TemperatureGradientBar(position: Float, markerColor: Color) {
             size = Size(barWidth, barHeight),
             cornerRadius = CornerRadius(barHeight / 2f),
         )
-        drawLine(
-            color = centerMarkerColor,
-            start = Offset(size.width / 2f, barTop - 1.dp.toPx()),
-            end = Offset(size.width / 2f, barTop + barHeight + 1.dp.toPx()),
-            strokeWidth = 1.dp.toPx(),
+        val markerX =
+            (barStart + barWidth * position.coerceIn(0f, 1f))
+                .coerceIn(markerRadius, size.width - markerRadius)
+        drawCircle(
+            color = markerHaloColor,
+            radius = markerRadius + 2.dp.toPx(),
+            center = Offset(markerX, centerY + 1.dp.toPx()),
         )
-        val markerX = barStart + barWidth * position.coerceIn(0f, 1f)
         drawCircle(color = markerBorderColor, radius = markerRadius, center = Offset(markerX, centerY))
-        drawCircle(color = markerColor, radius = innerRadius, center = Offset(markerX, centerY))
+        drawCircle(color = markerColor.copy(alpha = 0.78f), radius = innerRadius, center = Offset(markerX, centerY))
+        drawCircle(
+            color = Color.White.copy(alpha = 0.74f),
+            radius = 1.8.dp.toPx(),
+            center = Offset(markerX - 1.8.dp.toPx(), centerY - 1.8.dp.toPx()),
+        )
+        drawCircle(
+            color = Color.White.copy(alpha = 0.58f),
+            radius = innerRadius,
+            center = Offset(markerX, centerY),
+            style = Stroke(width = 1.dp.toPx()),
+        )
     }
 }
 
