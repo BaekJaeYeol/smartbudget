@@ -59,13 +59,14 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 20.dp)
+                .padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 20.dp)
                 .semantics { contentDescription = description },
     ) {
         Text(
             text = stringResource(R.string.home_spending_temperature),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
+            lineHeight = 12.sp,
             fontWeight = FontWeight.SemiBold,
         )
         Row(

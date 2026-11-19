@@ -142,19 +142,31 @@ private fun MonthlyOverviewHeader(state: HomeDashboardUiState) {
 
 @Composable
 private fun GreetingSection(displayName: String) {
-    Box(modifier = Modifier.fillMaxWidth().height(98.dp).clipToBounds()) {
-        Text(
-            text = stringResource(R.string.home_greeting, displayName),
+    Box(modifier = Modifier.fillMaxWidth().height(80.dp).clipToBounds()) {
+        Column(
             modifier = Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 128.dp, bottom = 18.dp),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-        )
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_greeting, displayName),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(R.string.home_greeting_subtitle),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 18.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         Image(
             painter = painterResource(R.drawable.home_greeting_robot),
             contentDescription = stringResource(R.string.home_greeting_robot_description),
             contentScale = ContentScale.Fit,
-            modifier = Modifier.align(Alignment.BottomEnd).size(142.dp).offset(x = 4.dp, y = 37.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).size(160.dp).offset(x = 25.dp, y = 25.dp),
         )
     }
 }
@@ -167,15 +179,16 @@ private fun MonthlyBudgetSection(
     progressColor: Color,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 stringResource(R.string.home_remaining_budget_amount, formatHomeAmount(remainingBudget)),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = stringResource(R.string.home_total_budget_amount, formatHomeAmount(state.budget)),

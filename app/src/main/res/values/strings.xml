@@ -155,9 +155,9 @@
     <string name="settings_withdraw_confirm_message">계정과 관련 데이터가 삭제되며 이 작업은 되돌릴 수 없습니다.</string>
     <string name="settings_withdraw_confirm_action">탈퇴하기</string>
     <string name="settings_account_deleted">계정 탈퇴가 완료되었습니다.</string>
-    <string name="home_greeting">안녕하세요, %1$s님!</string>
+    <string name="home_greeting">안녕하세요, %1$s님</string>
     <string name="home_greeting_robot_description">웃으며 손을 흔드는 SmartBudget 로봇</string>
-    <string name="home_greeting_subtitle">오늘도 가볍게 예산을 확인해 보세요.</string>
+    <string name="home_greeting_subtitle">오늘도 같이 절약해 봐요!</string>
     <string name="home_monthly_income">이번 달 수입</string>
     <string name="home_monthly_expense">이번 달 지출</string>
     <string name="home_spending_temperature_bad">나빠요</string>
@@ -168,7 +168,7 @@
     <string name="home_spending_temperature_description">소비 온도 %1$s, %2$s</string>
     <string name="home_spending_temperature">소비 온도</string>
     <string name="home_monthly_overview">%1$d월 현황</string>
-    <string name="home_remaining_budget_amount">%1$s 남음</string>
+    <string name="home_remaining_budget_amount">예산 %1$s 남음</string>
     <string name="home_total_budget_amount">월간 예산 %1$s</string>
     <string name="home_budget_usage_percent">%1$d%% 사용</string>
     <string name="sample_meal_set">선선한일 세트</string>
