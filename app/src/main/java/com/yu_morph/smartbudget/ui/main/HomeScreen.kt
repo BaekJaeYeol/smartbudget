@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -73,6 +74,8 @@ internal fun HomeScreen(
             displayName = displayName.ifBlank { stringResource(R.string.settings_profile_default_name) },
         )
         Spacer(Modifier.height(14.dp))
+        SpendingTemperatureCard(temperature = dashboardState.spendingTemperature)
+        Spacer(Modifier.height(14.dp))
         NewsCard(
             state = newsState,
             onPreviousPage = onPreviousNewsPage,
@@ -104,15 +107,25 @@ private fun FinancialOverviewCard(state: HomeDashboardUiState, displayName: Stri
             )
             MonthlyOverviewHeader(state)
             MonthlyCashFlowSection(state)
-            Spacer(Modifier.height(10.dp))
-            MonthlyBudgetSection(state, remainingBudget, progress, progressColor)
             HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
                 thickness = 0.5.dp,
                 color = dividerColor,
             )
-            SpendingTemperatureRow(temperature = state.spendingTemperature)
+            MonthlyBudgetSection(state, remainingBudget, progress, progressColor)
         }
+    }
+}
+
+@Composable
+private fun SpendingTemperatureCard(temperature: Double) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        SpendingTemperatureRow(temperature = temperature)
     }
 }
 
@@ -161,7 +174,7 @@ private fun MonthlyBudgetSection(
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 stringResource(R.string.home_remaining_budget_amount, formatHomeAmount(remainingBudget)),
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
@@ -242,7 +255,8 @@ private fun BudgetUsageIndicator(progress: Float, progressColor: Color) {
                 Modifier
                     .progressSemantics(boundedProgress)
                     .width(92.dp)
-                    .height(5.dp),
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(3.dp)),
         ) {
             if (boundedProgress > 0f) {
                 Box(Modifier.weight(boundedProgress).fillMaxHeight().background(progressColor))
