@@ -79,8 +79,8 @@ internal fun NewsCard(
             )
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                thickness = HomeSectionDividerThickness,
+                color = homeSectionDividerColor(),
             )
             EconomyNewsSection(
                 state = state,

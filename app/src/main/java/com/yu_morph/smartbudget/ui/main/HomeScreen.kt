@@ -91,7 +91,7 @@ private fun FinancialOverviewCard(state: HomeDashboardUiState, displayName: Stri
     val progress = if (state.budget > 0) state.expense.toFloat() / state.budget else 0f
     val progressColor = budgetUsageColor(progress)
     val remainingBudget = (state.budget - state.expense).coerceAtLeast(0)
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+    val dividerColor = homeSectionDividerColor()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -102,14 +102,14 @@ private fun FinancialOverviewCard(state: HomeDashboardUiState, displayName: Stri
             GreetingSection(displayName)
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
-                thickness = 0.5.dp,
+                thickness = HomeSectionDividerThickness,
                 color = dividerColor,
             )
             MonthlyOverviewHeader(state)
             MonthlyCashFlowSection(state)
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-                thickness = 0.5.dp,
+                thickness = HomeSectionDividerThickness,
                 color = dividerColor,
             )
             MonthlyBudgetSection(state, remainingBudget, progress, progressColor)
