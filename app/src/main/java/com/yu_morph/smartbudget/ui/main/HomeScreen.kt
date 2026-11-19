@@ -179,7 +179,7 @@ private fun MonthlyBudgetSection(
     progressColor: Color,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -206,7 +206,7 @@ private fun MonthlyBudgetSection(
 @Composable
 private fun MonthlyCashFlowSection(state: HomeDashboardUiState) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, top = 4.dp, end = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CashFlowAmount(
