@@ -71,10 +71,10 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.Bottom,
         ) {
             Row(
-                modifier = Modifier.offset(x = -6.dp),
+                modifier = Modifier.padding(bottom = 8.dp).offset(x = -6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(

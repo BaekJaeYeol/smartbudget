@@ -170,7 +170,7 @@
     <string name="home_monthly_overview">Month %1$d overview</string>
     <string name="home_remaining_budget_amount">%1$s remaining</string>
     <string name="home_total_budget_amount">Monthly budget %1$s</string>
-    <string name="home_budget_usage_percent">%1$d%%\nused</string>
+    <string name="home_budget_usage_percent">%1$d%% used</string>
     <string name="sample_meal_set">Meal set</string>
     <string name="sample_cafe_order">Iced caramel macchiato</string>
     <string name="sample_bus_ride">Bus fare</string>
