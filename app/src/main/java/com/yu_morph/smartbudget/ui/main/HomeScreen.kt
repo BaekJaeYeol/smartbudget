@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -100,15 +101,10 @@ private fun FinancialOverviewCard(state: HomeDashboardUiState, displayName: Stri
                 thickness = 0.5.dp,
                 color = dividerColor,
             )
+            MonthlyCashFlowSection(state)
             MonthlyBudgetSection(state, remainingBudget, progress, progressColor)
             HorizontalDivider(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                thickness = 0.5.dp,
-                color = dividerColor,
-            )
-            MonthlyCashFlowSection(state)
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth(),
                 thickness = 0.5.dp,
                 color = dividerColor,
             )
@@ -122,9 +118,9 @@ private fun GreetingSection(displayName: String) {
     Box(modifier = Modifier.fillMaxWidth().height(98.dp).clipToBounds()) {
         Text(
             text = stringResource(R.string.home_greeting, displayName),
-            modifier = Modifier.align(Alignment.CenterStart).padding(start = 20.dp, end = 128.dp),
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 128.dp, bottom = 18.dp),
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 16.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
         )
         Image(
@@ -144,7 +140,7 @@ private fun MonthlyBudgetSection(
     progressColor: Color,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -153,7 +149,7 @@ private fun MonthlyBudgetSection(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                stringResource(R.string.home_monthly_budget, state.month.monthValue),
+                stringResource(R.string.home_monthly_overview, state.month.monthValue),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -178,37 +174,28 @@ private fun MonthlyBudgetSection(
 
 @Composable
 private fun MonthlyCashFlowSection(state: HomeDashboardUiState) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 16.dp)) {
-        Text(
-            text = stringResource(R.string.home_monthly_cash_flow, state.month.monthValue),
-            modifier = Modifier.padding(horizontal = 20.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, top = 20.dp, end = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CashFlowAmount(
+            label = stringResource(R.string.budget_book_income),
+            amount = state.income,
+            color = ExpenseRed,
+            modifier = Modifier.weight(1f),
         )
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            CashFlowAmount(
-                label = stringResource(R.string.budget_book_income),
-                amount = state.income,
-                color = ExpenseRed,
-                modifier = Modifier.weight(1f),
-            )
-            CashFlowAmount(
-                label = stringResource(R.string.budget_book_expense),
-                amount = state.expense,
-                color = IncomeBlue,
-                modifier = Modifier.weight(1f),
-            )
-            CashFlowAmount(
-                label = stringResource(R.string.budget_book_total),
-                amount = state.income - state.expense,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        CashFlowAmount(
+            label = stringResource(R.string.budget_book_expense),
+            amount = state.expense,
+            color = IncomeBlue,
+            modifier = Modifier.weight(1f),
+        )
+        CashFlowAmount(
+            label = stringResource(R.string.budget_book_total),
+            amount = state.income - state.expense,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -254,6 +241,8 @@ private fun BudgetUsageIndicator(progress: Float, progressColor: Color) {
             color = progressColor,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
+            lineHeight = 12.sp,
+            textAlign = TextAlign.Center,
         )
     }
 }

@@ -9,7 +9,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -69,14 +68,13 @@ internal fun SpendingTemperatureRow(temperature: Double, modifier: Modifier = Mo
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
         )
-        Spacer(Modifier.height(2.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.Top,
         ) {
             Row(
-                modifier = Modifier.padding(bottom = 8.dp).offset(x = -6.dp),
+                modifier = Modifier.offset(x = -6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(

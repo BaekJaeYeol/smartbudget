@@ -167,11 +167,10 @@
     <string name="home_spending_temperature_amazing">Amazing</string>
     <string name="home_spending_temperature_description">Spending temperature %1$s, %2$s</string>
     <string name="home_spending_temperature">Spending temperature</string>
-    <string name="home_monthly_budget">Month %1$d budget</string>
+    <string name="home_monthly_overview">Month %1$d overview</string>
     <string name="home_remaining_budget_amount">%1$s remaining</string>
     <string name="home_total_budget_amount">Monthly budget %1$s</string>
-    <string name="home_budget_usage_percent">%1$d%% used</string>
-    <string name="home_monthly_cash_flow">Income · spending in month %1$d</string>
+    <string name="home_budget_usage_percent">%1$d%%\nused</string>
     <string name="sample_meal_set">Meal set</string>
     <string name="sample_cafe_order">Iced caramel macchiato</string>
     <string name="sample_bus_ride">Bus fare</string>

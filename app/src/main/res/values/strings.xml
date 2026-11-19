@@ -167,11 +167,10 @@
     <string name="home_spending_temperature_amazing">굉장해요</string>
     <string name="home_spending_temperature_description">소비 온도 %1$s, %2$s</string>
     <string name="home_spending_temperature">소비 온도</string>
-    <string name="home_monthly_budget">%1$d월 예산</string>
+    <string name="home_monthly_overview">%1$d월 현황</string>
     <string name="home_remaining_budget_amount">%1$s 남음</string>
     <string name="home_total_budget_amount">월간 예산 %1$s</string>
-    <string name="home_budget_usage_percent">%1$d%% 사용</string>
-    <string name="home_monthly_cash_flow">%1$d월 수입·지출</string>
+    <string name="home_budget_usage_percent">%1$d%%\n사용</string>
     <string name="sample_meal_set">선선한일 세트</string>
     <string name="sample_cafe_order">아이스 카라멜 마키아또</string>
     <string name="sample_bus_ride">버스 승차</string>
