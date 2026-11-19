@@ -76,3 +76,15 @@ SmartBudget은 Kotlin과 Jetpack Compose로 개발하는 Android 개인 재무 �
 ```
 
 `verify` 하네스는 Kotlin 소스를 먼저 포맷한 뒤 로컬 테스트, ktlint 검사, detekt 분석을 실행한다. 작업을 인계하기 전에 반드시 사용한다. 포맷 작업이 파일을 변경할 수 있으므로 커밋하거나 완료를 보고하기 전에 변경 내용을 검토한다.
+
+## 커밋 지침
+
+- 각 단위 작업이 완료되면 해당 작업과 직접 관련된 변경만 커밋한다.
+- 커밋 메시지는 영어로 작성하고, 메시지 앞에 작업 종류를 나타내는 접두사를 붙인다.
+- 접두사는 변경 성격에 맞게 `feat`, `fix`, `style`, `refactor`, `test`, `docs`, `build`, `ci`, `chore` 등을 사용한다.
+- 커밋 메시지는 `<type>: <English description>` 형식을 따른다.
+
+```text
+feat: add list alignment generator
+style: fix card padding
+```
