@@ -155,11 +155,10 @@
     <string name="settings_withdraw_confirm_message">Your account and related data will be deleted. This action cannot be undone.</string>
     <string name="settings_withdraw_confirm_action">Delete account</string>
     <string name="settings_account_deleted">Your account was deleted.</string>
-    <string name="home_greeting">Hello, %1$s</string>
+    <string name="home_greeting">Hello, %1$s!</string>
     <string name="home_greeting_subtitle">Take a quick look at your budget today.</string>
     <string name="home_monthly_income">Income this month</string>
     <string name="home_monthly_expense">Spending this month</string>
-    <string name="home_spending_temperature">%1$s’s spending temperature</string>
     <string name="home_spending_temperature_bad">Bad</string>
     <string name="home_spending_temperature_not_good">Not good</string>
     <string name="home_spending_temperature_okay">Okay</string>
@@ -167,6 +166,7 @@
     <string name="home_spending_temperature_amazing">Amazing</string>
     <string name="home_spending_temperature_description">Spending temperature %1$s, %2$s</string>
     <string name="home_monthly_budget">Month %1$d budget</string>
+    <string name="home_total_budget_amount">Monthly budget %1$s</string>
     <string name="home_budget_usage_percent">%1$d%%</string>
     <string name="sample_meal_set">Meal set</string>
     <string name="sample_cafe_order">Iced caramel macchiato</string>
